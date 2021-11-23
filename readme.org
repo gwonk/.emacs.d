@@ -260,8 +260,10 @@ previously compiled manually then all of the package initialization will still t
 
     (unless (assoc-default "melpa" package-archives)
       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
-    (unless (assoc-default "org" package-archives)
-      (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
+    ;(unless (assoc-default "elpa" package-archives)
+    ;  (add-to-list 'package-archives '("elpa" . "http://elpa.gnu.org/packages/") t))
+    ;(unless (assoc-default "org" package-archives)
+    ;  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
 
     (package-initialize)
     (unless (package-installed-p 'use-package)
@@ -281,114 +283,20 @@ previously compiled manually then all of the package initialization will still t
 *** Display
 
 #+BEGIN_SRC elisp
-  ;;(add-to-list 'custom-theme-load-path "~/.emacs.d/elpa/monokai-theme-3.4.0/")
-  (use-package monokai-theme
-  :ensure t
- ; :disabled t
-  :config
-  (load-theme 'monokai 'no-confirm))
-;;(load-theme 'monokai t)
-
-  ;;
-  ;; Update the colour of the company-mode context menu to fit the Monokai theme
-  ;; @source: https://github.com/search?q=deftheme+company-tooltip&type=Code
-  ;;
-  (deftheme monokai-overrides)
-
-  (let ((class '((class color) (min-colors 257)))
-      (terminal-class '((class color) (min-colors 89))))
-
-  (custom-theme-set-faces
-   'monokai-overrides
-
-   ;; Linum and mode-line improvements (only in sRGB).
-   `(linum
-     ((,class :foreground "#75715E"
-              :background "#49483E")))
-   `(mode-line-inactive
-     ((,class (:box (:line-width 1 :color "#2c2d26" :style nil)
-                    :background "#2c2d26"))))
-
-   ;; Custom region colouring.
-   `(region
-     ((,class :foreground "#75715E"
-              :background "#49483E")
-      (,terminal-class :foreground "#1B1E1C"
-                       :background "#8B8878")))
-
-   ;; Additional modes
-   ;; Company tweaks.
-   `(company-tooltip-common
-     ((t :foreground "#F8F8F0"
-         :background "#474747"
-         :underline t)))
-
-   `(company-template-field
-     ((t :inherit company-tooltip
-         :foreground "#C2A1FF")))
-
-   `(company-tooltip-selection
-     ((t :background "#349B8D"
-         :foreground "#BBF7EF")))
-
-   `(company-tooltip-common-selection
-     ((t :foreground "#F8F8F0"
-         :background "#474747"
-         :underline t)))
-
-   `(company-scrollbar-fg
-     ((t :background "#BBF7EF")))
-
-   `(company-tooltip-annotation
-     ((t :inherit company-tooltip
-         :foreground "#C2A1FF")))
-
-   ;; Popup menu tweaks.
-   `(popup-menu-face
-     ((t :foreground "#A1EFE4"
-         :background "#49483E")))
-
-   `(popup-menu-selection-face
-     ((t :background "#349B8D"
-         :foreground "#BBF7EF")))
-
-   ;; Circe
-   `(circe-prompt-face
-     ((t (:foreground "#C2A1FF" :weight bold))))
-
-   `(circe-server-face
-     ((t (:foreground "#75715E"))))
-
-   `(circe-highlight-nick-face
-     ((t (:foreground "#AE81FF" :weight bold))))
-
-   `(circe-my-message-face
-     ((t (:foreground "#E6DB74"))))
-
-   `(circe-originator-face
-     ((t (:weight bold))))))
+  (use-package solarized-theme
+     :ensure t
+     :init
+      (load-theme 'solarized-light t))
 #+END_SRC
 
 old Use material theme
 
 #+BEGIN_SRC emacs-lisp
-(use-package material-theme
-  :ensure t
-  :disabled t
-  :config
-  (load-theme 'material 'no-confirm))
-
-(use-package zenburn-theme
-  :ensure t
-  :disabled t
-  :init
-  (load-theme 'zenburn 'no-confirm))
-
 (use-package time
   :config
   (setq display-time-24hr-format t
         display-time-default-load-average nil)
-;;  (display-time-mode)
+  (display-time-mode)
 )
 
 (use-package windmove
@@ -420,12 +328,12 @@ highlights
 #+END_SRC
 *** LineNumbers
 #+BEGIN_SRC elisp
-   (setq linum-format "%4d")
+(setq linum-format "%4d")
 
-   (defun my-linum-mode-hook ()
+(defun my-linum-mode-hook ()
      (linum-mode t))
 
-    (add-hook 'find-file-hook 'my-linum-mode-hook)
+(add-hook 'find-file-hook 'my-linum-mode-hook)
 #+END_SRC
 *** Timestamps
 #+BEGIN_SRC elisp
@@ -759,53 +667,54 @@ Projectile is a quick and easy project management package that "just works". We'
 going to install it and make sure it's loaded immediately.
 
 #+BEGIN_SRC emacs-lisp
-(use-package projectile
-  :ensure projectile
-;;  :demand t
-;;  :bind ("s-p" . projectile-command-map)
-  :config
-  (progn
-    (setq projectile-enable-caching t)
-    (setq projectile-require-project-root nil)
-    (setq projectile-completion-system 'ivy)
-    (add-to-list 'projectile-globally-ignored-files ".DS_Store")
+  (use-package projectile
+    :ensure projectile
+  ;;  :demand t
+  ;;  :bind ("s-p" . projectile-command-map)
+    :config
+    (progn
+      (setq projectile-enable-caching t)
+      (setq projectile-require-project-root nil)
+      (setq projectile-completion-system 'ivy)
+      (add-to-list 'projectile-globally-ignored-files ".DS_Store")
+    )
+    :defer (projectile-cleanup-known-projects)
+    :delight '(:eval (concat "𝓟/" (projectile-project-name)))
   )
-  :defer (projectile-cleanup-known-projects)
-  :delight '(:eval (concat "𝓟/" (projectile-project-name)))
-)
 
-(use-package ivy
-  :ensure t
-  :config
-    (ivy-mode 1)
-    (setq ivy-use-virtual-buffers t)
-    (setq enable-recursive-minibuffers t)
-    (global-set-key (kbd "C-c C-r") 'ivy-resume)
-    (global-set-key (kbd "<f6>") 'ivy-resume)
-  :delight )
+  (use-package ivy
+    :ensure t
+    :config
+      (ivy-mode 1)
+      (setq ivy-use-virtual-buffers t)
+      (setq ivy-count-format "(%d/%d) ")
+      (setq enable-recursive-minibuffers t)
+      (global-set-key (kbd "C-c C-r") 'ivy-resume)
+      (global-set-key (kbd "<f6>") 'ivy-resume)
+    :delight )
 
-(use-package swiper
-  :ensure t
-  :config
-  (global-set-key "\C-s" 'swiper)
-)
+  (use-package swiper
+    :ensure t
+    :config
+      (global-set-key "\C-s" 'swiper)
+  )
 
-(use-package counsel
-  :ensure t
-  :config
-  (global-set-key (kbd "M-x") 'counsel-M-x)
-  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-  (global-set-key (kbd "<f1> l") 'counsel-find-library)
-  (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-  (global-set-key (kbd "C-c g") 'counsel-git)
-  (global-set-key (kbd "C-c j") 'counsel-git-grep)
-  (global-set-key (kbd "C-c k") 'counsel-ag)
-  (global-set-key (kbd "C-x l") 'counsel-locate)
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-)
+  (use-package counsel
+    :ensure t
+    :config
+    (global-set-key (kbd "M-x") 'counsel-M-x)
+    (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+    (global-set-key (kbd "<f1> l") 'counsel-find-library)
+    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+    (global-set-key (kbd "C-c g") 'counsel-git)
+    (global-set-key (kbd "C-c j") 'counsel-git-grep)
+    (global-set-key (kbd "C-c k") 'counsel-ag)
+    (global-set-key (kbd "C-x l") 'counsel-locate)
+    (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+  )
 #+END_SRC
 
 *** Ido
@@ -856,44 +765,46 @@ Let's include a newer version of org-mode than the one that is built in. We're g
 to manually remove the org directories from the load path, to ensure the version we
 want is prioritized instead.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle off
 (use-package org
-  :ensure org-plus-contrib
+  :ensure t
   :delight org-mode "✎"
   :pin org
   :defer t)
 
 ;; Ensure ELPA org is prioritized above built-in org.
-(require 'cl)
-(setq load-path (remove-if (lambda (x) (string-match-p "org$" x)) load-path))
+;(require 'cl)
+;(setq load-path (remove-if (lambda (x) (string-match-p "org$" x)) load-path))
 #+END_SRC
 
 *** MacOS
 MacOS Customisations
 #+BEGIN_SRC emacs-lisp
-;; Are we on a mac?
-(setq is-mac (equal system-type 'darwin))
+    ;; Are we on a mac?
+    (setq is-mac (equal system-type 'darwin))
 
-(when (display-graphic-p)
-  (if is-mac
-      (menu-bar-mode 1)))
+    (when (display-graphic-p)
+      (if is-mac
+          (menu-bar-mode 1)))
 
-;; Make Meta command and add Hyper.
-(when is-mac
-  ;; Change command to meta.
-  (setq mac-command-modifier 'super)
-  (setq mac-option-modifier 'meta)
-  ;; not sure what hyper is (setq ns-function-modifier 'hyper)
+    ;; Make Meta command and add Hyper.
+    (when is-mac
+      ;; Change command to meta.
+      (setq mac-command-modifier 'super)
+      (setq mac-option-modifier 'meta)
+      ;; not sure what hyper is (setq ns-function-modifier 'hyper)
 
-  ;; Use right option for special characters.
-;;  (setq mac-right-option-modifier 'none)
+      ;; Use right option for special characters.
+    ;;  (setq mac-right-option-modifier 'none)
 
-  ;; Remove date and battery status from modeline
-  (display-time-mode -1)
-  (display-battery-mode -1)
+      ;; Remove date and battery status from modeline
+      (display-time-mode -1)
+      (display-battery-mode -1)
 
+      ;; fix exec-path
+  (setq exec-path (append "/usr/local/bin" exec-path))
 
-  )
+      )
 
 #+END_SRC
 *** Toc-org
@@ -909,19 +820,27 @@ package that automatically generates an up to date table of contents for us.
 *** Evil Mode
 Evil Evil Evil
 #+BEGIN_SRC emacs-lisp
-  (use-package evil
-    :ensure t
-    :init
-    (setq evil-search-module 'evil-search)
-    (setq evil-ex-complete-emacs-commands nil)
-    (setq evil-vsplit-window-right t)
-    (setq evil-split-window-below t)
-    (setq evil-shift-rount nil)
-    (setq evil-want-C-u-scroll t)
-    :config
+    (use-package evil
+      :ensure t
+      :init
+        (setq evil-search-module 'evil-search)
+        (setq evil-ex-complete-emacs-commands nil)
+        (setq evil-vsplit-window-right t)
+        (setq evil-split-window-below t)
+        (setq evil-shift-rount nil)
+        (setq evil-want-C-u-scroll t)
+      :config
+        (evil-mode 1))
     (evil-mode 1)
-  )
-  (evil-mode 1)
+
+    (use-package evil-org
+       :ensure t
+            :after org
+          :hook (org-mode . (lambda () evil-org-mode))
+        :config
+      (require 'evil-org-agenda)
+    (evil-org-agenda-set-keys))
+  (evil-org-mode 1)
 #+END_SRC
 
 ** Programming
