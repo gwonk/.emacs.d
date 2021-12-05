@@ -1,63 +1,72 @@
 #+TITLE: Emacs Literate Configuration
-#+AUTHOR: Andrés Gasson, Eric Miller
+#+AUTHOR:  Eric Miller
 #+PROPERTY: header-args :tangle yes
 
-* Configuration
+* Introduction
 :PROPERTIES:
 :VISIBILITY: children
 :END:
 
 ** Table of Contents :TOC_3_gh:
-- [[#configuration][Configuration]]
+- [[#introduction][Introduction]]
   - [[#about-this-file][About this file]]
   - [[#org-file-tweaks][Org File Tweaks]]
     - [[#automatically-tangle][Automatically Tangle]]
     - [[#visibility-settings][Visibility Settings]]
     - [[#table-of-contents][Table of Contents]]
   - [[#personal-information][Personal Information]]
-  - [[#emacs-initialisation][Emacs Initialisation]]
+  - [[#emacs-initialization][Emacs Initialization]]
     - [[#settings][Settings]]
     - [[#package-management][Package Management]]
-  - [[#packages][Packages]]
-    - [[#display][Display]]
-    - [[#linenumbers][LineNumbers]]
-    - [[#timestamps][Timestamps]]
-    - [[#fonts][Fonts]]
-    - [[#whitespace][Whitespace]]
-    - [[#wordsmithing][Wordsmithing]]
-    - [[#fill-mode][Fill Mode]]
-    - [[#global-keys][Global keys]]
-    - [[#which-key][Which-key]]
-    - [[#files][Files]]
-    - [[#git][Git]]
-    - [[#magit][Magit]]
-    - [[#projectile][Projectile]]
-    - [[#ido][Ido]]
-    - [[#undo][Undo]]
-    - [[#org][Org]]
-    - [[#macos][MacOS]]
-    - [[#toc-org][Toc-org]]
-    - [[#evil-mode][Evil Mode]]
-  - [[#programming][Programming]]
-    - [[#eldoc][Eldoc]]
-    - [[#prettify-code][Prettify code]]
-    - [[#elisp][Elisp]]
-    - [[#clojure][Clojure]]
-    - [[#parens][Parens]]
-    - [[#cider][Cider]]
-    - [[#javascript][Javascript]]
-    - [[#yaml][YAML]]
-    - [[#c][C]]
-    - [[#css][CSS]]
-    - [[#terraform][Terraform]]
-  - [[#post-initialisation][Post Initialisation]]
+- [[#packages][Packages]]
+  - [[#display][Display]]
+  - [[#linenumbers][LineNumbers]]
+  - [[#timestamps][Timestamps]]
+  - [[#fonts][Fonts]]
+  - [[#whitespace][Whitespace]]
+  - [[#wordsmithing][Wordsmithing]]
+    - [[#red-warnings][Red Warnings]]
+  - [[#fill-mode][Fill Mode]]
+  - [[#global-keys][Global keys]]
+  - [[#which-key][Which-key]]
+  - [[#files][Files]]
+  - [[#git][Git]]
+  - [[#magit][Magit]]
+  - [[#projectile][Projectile]]
+  - [[#ivy][Ivy]]
+  - [[#counsel][Counsel]]
+  - [[#ido][Ido]]
+  - [[#undo][Undo]]
+  - [[#org][Org]]
+  - [[#macos][MacOS]]
+  - [[#toc-org][Toc-org]]
+  - [[#evil-mode][Evil Mode]]
+  - [[#eshell][EShell]]
+- [[#programming][Programming]]
+  - [[#eldoc][Eldoc]]
+  - [[#prettify-code][Prettify code]]
+  - [[#elisp][Elisp]]
+  - [[#clojure][Clojure]]
+  - [[#parens][Parens]]
+  - [[#cider][Cider]]
+  - [[#javascript][Javascript]]
+    - [[#js2-mode][JS2 Mode]]
+    - [[#flycheck-and-jshint][Flycheck and JSHint]]
+    - [[#refactoring-javascript][Refactoring JavaScript]]
+    - [[#skewer][Skewer]]
+    - [[#json-mode][JSON mode]]
+  - [[#yaml][YAML]]
+  - [[#c][C]]
+  - [[#css][CSS]]
+  - [[#terraform][Terraform]]
+- [[#post-initialisation][Post Initialisation]]
 
 ** About this file
 This is an Emacs literate configuration template. It contains the basic structure
 of a literate config along with some optimizations to ensure a fast load time.
 
-This was originally authored by Andrés Gasson and titled Atea Emacs
-Literate Configuration.  Most of this is still his code, but I've
+This was originally authored by Andrés Ejmson and titled [[https://github.com/frap/emacs-literate][Atea Emacs
+Literate Configuration]].  Most of this is still his code, but I've
 started customizing it with my preferences.
 
 ** Org File Tweaks
@@ -95,7 +104,7 @@ Let's set some variables with basic user information.
       user-mail-address "eric@gwonk.com")
 #+END_SRC
 
-** Emacs Initialisation
+** Emacs Initialization
 
 *** Settings
 We're going to increase the gc-cons-threshold to a very high number to decrease the load and compile time.
@@ -135,11 +144,11 @@ initial-scratch-message nil)
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
 
-(defconst gas-savefile-dir (expand-file-name "savefile" user-emacs-directory))
+(defconst ejm-savefile-dir (expand-file-name "savefile" user-emacs-directory))
 
 ;; create the savefile dir if it doesn't exist
-(unless (file-exists-p gas-savefile-dir)
-  (make-directory gas-savefile-dir))
+(unless (file-exists-p ejm-savefile-dir)
+  (make-directory ejm-savefile-dir))
 
 ;;; UI
 ;; the blinking cursor is nothing, but an annoyance
@@ -278,15 +287,17 @@ previously compiled manually then all of the package initialization will still t
 #+END_SRC
 
 
-** Packages
+* Packages
 
-*** Display
+** Display
 
 #+BEGIN_SRC elisp
   (use-package solarized-theme
-     :ensure t
-     :init
-      (load-theme 'solarized-light t))
+       :ensure t
+       :init
+         (setq solarized-use-variable-pitch nil
+                 solarized-scale-org-headlines nil)
+        (load-theme 'solarized-light t))
 #+END_SRC
 
 old Use material theme
@@ -326,7 +337,7 @@ highlights
   (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
   (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
 #+END_SRC
-*** LineNumbers
+** LineNumbers
 #+BEGIN_SRC elisp
 (setq linum-format "%4d")
 
@@ -335,7 +346,7 @@ highlights
 
 (add-hook 'find-file-hook 'my-linum-mode-hook)
 #+END_SRC
-*** Timestamps
+** Timestamps
 #+BEGIN_SRC elisp
 (defun format-date (format)
   (let ((system-time-locale "en_NZ.UTF-8"))
@@ -350,13 +361,13 @@ highlights
   (format-date "%Y-%m-%d %H:%M:%S"))
 #+END_SRC
 
-*** Fonts
+** Fonts
   There is a new wonderful coding font that I discovered recently called the Input (Font for Code).
   This is a really neat font that works particularly well. You just have to go to their site,
   define the characteristics you want for it, download and install it locally.
   #+BEGIN_SRC emacs-lisp
   ;;Use the Input Sans font size 12
-  (set-frame-font "Input Sans Condensed-14")
+  (set-frame-font "Input Mono Narrow-14")
   #+END_SRC
 
   And the best coloured highlighting of selected text needs to be both
@@ -378,7 +389,7 @@ highlights
           (-union '("Source Code Pro") dynamic-fonts-preferred-monospace-fonts))
     (dynamic-fonts-setup)))
 #+END_SRC
-*** Whitespace
+** Whitespace
 #+BEGIN_SRC emacs-lisp
 ;; Emacs modes typically provide a standard means to change the
 ;; indentation width -- eg. c-basic-offset: use that to adjust your
@@ -412,7 +423,7 @@ highlights
   (set-face-attribute 'whitespace-indentation nil :foreground "#666666" :background nil)
 )
 #+END_SRC
-*** Wordsmithing
+** Wordsmithing
  options for dealing with text and words
 #+BEGIN_SRC emacs-lisp
 (prefer-coding-system 'utf-8)
@@ -461,50 +472,50 @@ highlights
   :delight "")
 
 #+END_SRC
-**** Red Warnings
+*** Red Warnings
 
- Various keywords (in comments) are now flagged in a Red Error font:
+Various keywords (in comments) are now flagged in a Red Error font:
 
-    #+BEGIN_SRC emacs-lisp
-      (add-hook 'prog-common-hook
-         (lambda ()
-         (font-lock-add-keywords nil
-         '(("\\<\\(FIX\\|FIXME\\|TODO\\|BUG\\|HACK\\):"
-                1 font-lock-warning-face t)))))
-    #+END_SRC
-
-*** Fill Mode
-
-   Automatically wrapping when you get to the end of a line (or the
-   fill-region):
-
-   #+BEGIN_SRC elisp
-     (use-package emacs
-       :bind (("C-c T f" . auto-fill-mode)
-              ("C-c T t" . toggle-truncate-lines))
-       :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
-       :diminish auto-fill-mode)
+   #+BEGIN_SRC emacs-lisp
+     (add-hook 'prog-common-hook
+        (lambda ()
+        (font-lock-add-keywords nil
+        '(("\\<\\(FIX\\|FIXME\\|TODO\\|BUG\\|HACK\\):"
+               1 font-lock-warning-face t)))))
    #+END_SRC
 
-*** Global keys
+** Fill Mode
+
+  Automatically wrapping when you get to the end of a line (or the
+  fill-region):
+
+  #+BEGIN_SRC elisp
+    (use-package emacs
+      :bind (("C-c T f" . auto-fill-mode)
+             ("C-c T t" . toggle-truncate-lines))
+      :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
+      :diminish auto-fill-mode)
+  #+END_SRC
+
+** Global keys
 company mode TAB
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
 #+END_SRC
-*** Which-key
-   Many command sequences may be logical, but who can remember them
-   all? While I used to use [[https://github.com/kai2nenobu/guide-key][guide-key]] to display the final function
-   name, it isn't as nice as [[https://github.com/justbur/emacs-which-key][which-key]].
+** Which-key
+  Many command sequences may be logical, but who can remember them
+  all? While I used to use [[https://github.com/kai2nenobu/guide-key][guide-key]] to display the final function
+  name, it isn't as nice as [[https://github.com/justbur/emacs-which-key][which-key]].
 
-      #+name: global-keys
-   #+BEGIN_SRC emacs-lisp
-   (use-package which-key
-     :ensure t
-     :config
-   (which-key-mode +1))
-    #+END_SRC
+     #+name: global-keys
+  #+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :config
+  (which-key-mode +1))
+   #+END_SRC
 
-*** Files
+** Files
 
 Use dired Plus dired-x
 #+BEGIN_SRC emacs-lisp
@@ -538,7 +549,7 @@ Use dired Plus dired-x
   :diminish company-mode
   :ensure t
   :defer t
-  :config
+  :init
   (progn
     (global-company-mode)
     (bind-key "M-TAB" 'company-select-next company-active-map)
@@ -556,7 +567,7 @@ save place and recent files
 (use-package saveplace
    :ensure nil  ;; as not loading packages
    :config
-   (setq save-place-file (expand-file-name "saveplace" gas-savefile-dir))
+   (setq save-place-file (expand-file-name "saveplace" ejm-savefile-dir))
    ;; activate if for all buffers
    (setq-default save-place t)
  )
@@ -569,13 +580,13 @@ save place and recent files
         ;; save every minute
         savehist-autosave-interval 60
         ;; keep the home clean
-        savehist-file (expand-file-name "savehist" gas-savefile-dir))
+        savehist-file (expand-file-name "savehist" ejm-savefile-dir))
   (savehist-mode +1)
  )
 
 (use-package recentf
   :config
-  (setq recentf-save-file (expand-file-name "recentf" gas-savefile-dir)
+  (setq recentf-save-file (expand-file-name "recentf" ejm-savefile-dir)
         recentf-max-saved-items 500
         recentf-max-menu-items 15
         ;; disable recentf-cleanup on Emacs start, because it can cause
@@ -595,7 +606,7 @@ save place and recent files
   (bind-key "C-x f" 'recentf-ido-find-file )
 
 #+END_SRC
-*** Git
+** Git
 
    I like [[https://github.com/syohex/emacs-git-gutter-fringe][git-gutter-fringe]]:
 
@@ -629,95 +640,101 @@ save place and recent files
 
    Run =mo-git-blame-current= to see the goodies.
 
-*** Magit
+** Magit
 
-   Git is [[http://emacswiki.org/emacs/Git][already part of Emacs]]. However, [[http://philjackson.github.com/magit/magit.html][Magit]] is sweet.
-   Don't believe me? Check out [[https://www.youtube.com/watch?v=vQO7F2Q9DwA][this video]].
+  Git is [[http://emacswiki.org/emacs/Git][already part of Emacs]]. However, [[http://philjackson.github.com/magit/magit.html][Magit]] is sweet.
+  Don't believe me? Check out [[https://www.youtube.com/watch?v=vQO7F2Q9DwA][this video]].
 
-   #+BEGIN_SRC elisp
-     (use-package magit
-       :ensure t
-       :commands magit-status magit-blame
-       :init
-       (defadvice magit-status (around magit-fullscreen activate)
-         (window-configuration-to-register :magit-fullscreen)
-         ad-do-it
-         (delete-other-windows))
-       :config
-       (setq magit-branch-arguments nil
-             ;; use ido to look for branches
-             magit-completing-read-function 'magit-ido-completing-read
-             ;; don't put "origin-" in front of new branch names by default
-             magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
-             magit-push-always-verify nil
-             ;; Get rid of the previous advice to go into fullscreen
-             magit-restore-window-configuration t)
+  #+BEGIN_SRC elisp
+    (use-package magit
+      :ensure t
+      :commands magit-status magit-blame magit-section
+      :init
+      (defadvice magit-status (around magit-fullscreen activate)
+        (window-configuration-to-register :magit-fullscreen)
+        ad-do-it
+        (delete-other-windows))
+      :config
+      (setq magit-branch-arguments nil
+            ;; use ido to look for branches
+            magit-completing-read-function 'magit-ido-completing-read
+            ;; don't put "origin-" in front of new branch names by default
+            magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
+            magit-push-always-verify nil
+            ;; Get rid of the previous advice to go into fullscreen
+            magit-restore-window-configuration t)
 
-       :bind ("C-x g" . magit-status))
-   #+END_SRC
+      :bind ("C-x g" . magit-status))
+  #+END_SRC
 
-   I like having Magit to run in a /full screen/ mode, and add the
-   above =defadvice= idea from [[https://github.com/magnars/.emacs.d/blob/master/setup-magit.el][Sven Magnars]].
+  I like having Magit to run in a /full screen/ mode, and add the
+  above =defadvice= idea from [[https://github.com/magnars/.emacs.d/blob/master/setup-magit.el][Sven Magnars]].
 
-   *Note:* Use the [[https://github.com/jwiegley/emacs-release/blob/master/lisp/vc/smerge-mode.el][smerge-mode]] that is now part of Emacs.
+  *Note:* Use the [[https://github.com/jwiegley/emacs-release/blob/master/lisp/vc/smerge-mode.el][smerge-mode]] that is now part of Emacs.
 
 
-*** Projectile
+** Projectile
 Projectile is a quick and easy project management package that "just works". We're
 going to install it and make sure it's loaded immediately.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package projectile
-    :ensure projectile
-  ;;  :demand t
-  ;;  :bind ("s-p" . projectile-command-map)
-    :config
-    (progn
-      (setq projectile-enable-caching t)
-      (setq projectile-require-project-root nil)
-      (setq projectile-completion-system 'ivy)
-      (add-to-list 'projectile-globally-ignored-files ".DS_Store")
-    )
-    :defer (projectile-cleanup-known-projects)
-    :delight '(:eval (concat "𝓟/" (projectile-project-name)))
-  )
-
-  (use-package ivy
-    :ensure t
-    :config
-      (ivy-mode 1)
-      (setq ivy-use-virtual-buffers t)
-      (setq ivy-count-format "(%d/%d) ")
-      (setq enable-recursive-minibuffers t)
-      (global-set-key (kbd "C-c C-r") 'ivy-resume)
-      (global-set-key (kbd "<f6>") 'ivy-resume)
-    :delight )
-
-  (use-package swiper
-    :ensure t
-    :config
-      (global-set-key "\C-s" 'swiper)
-  )
-
-  (use-package counsel
-    :ensure t
-    :config
-    (global-set-key (kbd "M-x") 'counsel-M-x)
-    (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-    (global-set-key (kbd "<f1> l") 'counsel-find-library)
-    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-    (global-set-key (kbd "C-c g") 'counsel-git)
-    (global-set-key (kbd "C-c j") 'counsel-git-grep)
-    (global-set-key (kbd "C-c k") 'counsel-ag)
-    (global-set-key (kbd "C-x l") 'counsel-locate)
-    (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-  )
+(use-package projectile
+  :ensure projectile
+  :config
+      (progn (setq projectile-enable-caching t)
+                      (setq projectile-require-project-root nil)
+                      (setq projectile-completion-system 'ivy)
+                      (add-to-list 'projectile-globally-ignored-files ".DS_Store")
+                    )
+                    :defer (projectile-cleanup-known-projects)
+                    :delight '(:eval (concat "𝓟/" (projectile-project-name)))
+                  )
 #+END_SRC
 
-*** Ido
+** Ivy
+
+#+BEGIN_SRC emacs-lisp
+(use-package ivy
+  :ensure try
+                      :config
+                        (setq ivy-use-virtual-buffers t)
+                        (setq ivy-count-format "(%d/%d) ")
+                        (setq enable-recursive-minibuffers t)
+                        (global-set-key (kbd "C-c C-r") 'ivy-resume)
+                        (global-set-key (kbd "<f6>") 'ivy-resume)
+                      :delight
+                  :init
+                    (ivy-mode 1)
+                )
+
+(use-package swiper
+  :ensure t
+  :config
+    (global-set-key "\C-s" 'swiper))
+#+END_SRC
+
+** Counsel
+
+#+BEGIN_SRC emacs-lisp
+(use-package counsel
+                    :ensure t
+                    :config
+                    (global-set-key (kbd "M-x") 'counsel-M-x)
+                    (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+                    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+                    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+                    (global-set-key (kbd "<f1> l") 'counsel-find-library)
+                    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+                    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+                    (global-set-key (kbd "C-c g") 'counsel-git)
+                    (global-set-key (kbd "C-c j") 'counsel-git-grep)
+                    (global-set-key (kbd "C-c k") 'counsel-ag)
+                    (global-set-key (kbd "C-x l") 'counsel-locate)
+                    (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+                  )
+#+END_SRC
+
+** Ido
 
 #+BEGIN_SRC emacs-lisp
 (use-package ibuffer
@@ -744,7 +761,7 @@ going to install it and make sure it's loaded immediately.
   :ensure t
   :init (ido-vertical-mode))
 #+END_SRC
-*** Undo
+** Undo
 #+BEGIN_SRC emacs-lisp
 (use-package undo-tree
   :diminish undo-tree-mode
@@ -760,24 +777,66 @@ going to install it and make sure it's loaded immediately.
    (setq uniquify-ignore-buffers-re "^\\*"))
 
 #+END_SRC
-*** Org
+** Org
 Let's include a newer version of org-mode than the one that is built in. We're going
 to manually remove the org directories from the load path, to ensure the version we
 want is prioritized instead.
 
-#+BEGIN_SRC emacs-lisp :tangle off
+#+BEGIN_SRC emacs-lisp
 (use-package org
-  :ensure t
-  :delight org-mode "✎"
-  :pin org
-  :defer t)
+      :ensure t
+      :delight org-mode "✎")
 
-;; Ensure ELPA org is prioritized above built-in org.
-;(require 'cl)
-;(setq load-path (remove-if (lambda (x) (string-match-p "org$" x)) load-path))
+;(with-eval-after-load "org"
+;    (when (version-list-= (version-to-list org-version) '(9 4 6))
+;      (defun org-return-fix (fun &rest args)
+;        "Fix https://emacs.stackexchange.com/questions/64886."
+;        (let* ((context (if org-return-follows-link (org-element-context)
+;              (org-element-at-point)))
+;               (element-type (org-element-type context)))
+;      (if (eq element-type 'src-block)
+;          (apply #'org--newline args)
+;        (apply fun args))))
+;      (advice-add 'org-return :around #'org-return-fix)))
+;
+;(with-eval-after-load "org-src"
+;    (when (version-list-= (version-to-list org-version) '(9 4 6))
+;      (defun org-src--contents-for-write-back ()
+;        "Return buffer contents in a format appropriate for write back.
+;  Assume point is in the corresponding edit buffer."
+;        (let ((indentation-offset
+;           (if org-src--preserve-indentation 0
+;             (+ (or org-src--block-indentation 0)
+;            (if (memq org-src--source-type '(example-block src-block))
+;                org-src--content-indentation
+;              0))))
+;          (use-tabs? (and (> org-src--tab-width 0) t))
+;          (source-tab-width org-src--tab-width)
+;          (contents (org-with-wide-buffer (buffer-string)))
+;          (write-back org-src--allow-write-back))
+;      (with-temp-buffer
+;        ;; Reproduce indentation parameters from source buffer.
+;        (setq indent-tabs-mode use-tabs?)
+;        (when (> source-tab-width 0) (setq tab-width source-tab-width))
+;        ;; Apply WRITE-BACK function on edit buffer contents.
+;        (insert (org-no-properties contents))
+;        (goto-char (point-min))
+;        (when (functionp write-back) (save-excursion (funcall write-back)))
+;        ;; Add INDENTATION-OFFSET to every non-empty line in buffer,
+;        ;; unless indentation is meant to be preserved.
+;        (when (> indentation-offset 0)
+;          (while (not (eobp))
+;            (skip-chars-forward " \t")
+;            ;; (unless (eolp)     ;ignore blank lines
+;            (let ((i (current-column)))
+;          (delete-region (line-beginning-position) (point))
+;          (indent-to (+ i indentation-offset)))
+;            ;;)
+;            (forward-line)))
+;        (buffer-string))))))
 #+END_SRC
 
-*** MacOS
+** MacOS
 MacOS Customisations
 #+BEGIN_SRC emacs-lisp
     ;; Are we on a mac?
@@ -798,16 +857,17 @@ MacOS Customisations
     ;;  (setq mac-right-option-modifier 'none)
 
       ;; Remove date and battery status from modeline
-      (display-time-mode -1)
-      (display-battery-mode -1)
+      ;(display-time-mode -1)
+      ;(display-battery-mode -1)
 
       ;; fix exec-path
-  (setq exec-path (append "/usr/local/bin" exec-path))
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
 
       )
 
 #+END_SRC
-*** Toc-org
+** Toc-org
 Let's install and load the =toc-org= package after org mode is loaded. This is the
 package that automatically generates an up to date table of contents for us.
 
@@ -817,40 +877,58 @@ package that automatically generates an up to date table of contents for us.
   :init (add-hook 'org-mode-hook #'toc-org-enable))
 #+END_SRC
 
-*** Evil Mode
+** Evil Mode
 Evil Evil Evil
 #+BEGIN_SRC emacs-lisp
-    (use-package evil
-      :ensure t
-      :init
-        (setq evil-search-module 'evil-search)
-        (setq evil-ex-complete-emacs-commands nil)
-        (setq evil-vsplit-window-right t)
-        (setq evil-split-window-below t)
-        (setq evil-shift-rount nil)
-        (setq evil-want-C-u-scroll t)
-      :config
-        (evil-mode 1))
-    (evil-mode 1)
+  (use-package evil
+        :ensure t
+        :init
+          (setq evil-search-module 'evil-search)
+          (setq evil-ex-complete-emacs-commands nil)
+          (setq evil-vsplit-window-right t)
+          (setq evil-split-window-below t)
+          (setq evil-shift-rount nil)
+          (setq evil-want-C-u-scroll t)
+          (evil-mode 1))
 
-    (use-package evil-org
-       :ensure t
-            :after org
-          :hook (org-mode . (lambda () evil-org-mode))
-        :config
-      (require 'evil-org-agenda)
-    (evil-org-agenda-set-keys))
+  (use-package evil-org
+      :ensure t
+      :after org
+      :hook (org-mode . (lambda () evil-org-mode))
+      :init
   (evil-org-mode 1)
+        (require 'evil-org-agenda)
+      (evil-org-agenda-set-keys))
 #+END_SRC
 
-** Programming
-*** Eldoc
+** EShell
+Start the eshell and bind the key to the swap function.
+#+BEGIN_SRC emacs-lisp
+(use-package eshell
+    :ensure try
+    :config
+  (defvar ejm-save-buffer "*scratch*"
+    "Stores the return buffer for the ejm-switch command.")
+  (defun ejm-shell()
+    "Switch to the shell window."
+    (interactive)
+    (cond ((equal (buffer-name) "*eshell*")
+       (switch-to-buffer ejm-saved-buffer))
+      (t
+       (setq ejm-saved-buffer (buffer-name))
+       (switch-to-buffer "*eshell*"))))
+  :init
+(eshell)
+  (global-set-key [f12] 'ejm-shell))
+#+END_SRC
+* Programming
+** Eldoc
 #+BEGIN_SRC emacs-lisp
 (use-package eldoc
   :defer     t
   :diminish  eldoc-mode)
 #+END_SRC
-*** Prettify code
+** Prettify code
   #+BEGIN_SRC emacs-lisp
    ;; ----- Base set of pretty symbols.
    (defvar base-prettify-symbols-alist '(("<=" . ?≤)
@@ -862,16 +940,16 @@ Evil Evil Evil
                                       ("lambda" . ?λ ))
    )
 
-   (defun gas-lisp-prettify-symbols-hook ()
+   (defun ejm-lisp-prettify-symbols-hook ()
     "Set pretty symbols for lisp modes."
      (setq prettify-symbols-alist base-prettify-symbols-alist))
 
-   (defun gas-js-prettify-symbols-hook ()
+   (defun ejm-js-prettify-symbols-hook ()
      "Set pretty symbols for JavaScript."
      (setq prettify-symbols-alist
         (append '(("function" . ?ƒ)) base-prettify-symbols-alist)))
 
-   (defun gas-clj-prettify-symbols-hook ()
+   (defun ejm-clj-prettify-symbols-hook ()
      "Set pretty symbols for Clojure(script)."
      (setq prettify-symbols-alist
         (append '(("fn" . λ)) base-prettify-symbols-alist)))
@@ -884,22 +962,22 @@ Evil Evil Evil
              base-prettify-symbols-alist)))
 
 ;; Hook 'em up.
-(add-hook 'emacs-lisp-mode-hook #'gas-lisp-prettify-symbols-hook)
+(add-hook 'emacs-lisp-mode-hook #'ejm-lisp-prettify-symbols-hook)
 (add-hook 'web-mode-hook        #'other-prettify-symbols-hook)
-(add-hook 'js-mode-hook         #'gas-js-prettify-symbols-hook)
+(add-hook 'js-mode-hook         #'ejm-js-prettify-symbols-hook)
 (add-hook 'prog-mode-hook       #'other-prettify-symbols-hook)
-(add-hook 'clojure-mode-hook    #'gas-clj-prettify-symbols-hook)
+(add-hook 'clojure-mode-hook    #'ejm-clj-prettify-symbols-hook)
 
 (global-prettify-symbols-mode 1)
 
   #+END_SRC
-*** Elisp
+** Elisp
 #+BEGIN_SRC emacs-lisp
 (use-package lisp-mode
   :ensure nil
 ;;  :delight "lisp"
   :config
-;;  (defun gas-visit-ielm ()
+;;  (defun ejm-visit-ielm ()
 ;;    "Switch to default `ielm' buffer.
 ;;Start `ielm' if it's not already running."
 ;;    (interactive)
@@ -907,7 +985,7 @@ Evil Evil Evil
 
   (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
   (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
-;;  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'gas-visit-ielm)
+;;  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'ejm-visit-ielm)
   (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'eval-defun)
   (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
   (add-hook 'lisp-interaction-mode-hook #'eldoc-mode)
@@ -918,7 +996,7 @@ Evil Evil Evil
   (add-hook 'ielm-mode-hook #'eldoc-mode)
   (add-hook 'ielm-mode-hook #'rainbow-delimiters-mode))
 #+END_SRC
-*** Clojure
+** Clojure
   lets try out aggressive-indent
 #+BEGIN_SRC emacs-lisp
   (use-package aggressive-indent
@@ -963,7 +1041,7 @@ Evil Evil Evil
 
   #+END_SRC
 
-*** Parens
+** Parens
 
 
 #+BEGIN_SRC emacs-lisp
@@ -1035,7 +1113,7 @@ use rainbow delimiters
 #+END_SRC
 
 #+END_SRC
-*** Cider
+** Cider
 da-bomb!
 #+BEGIN_SRC emacs-lisp
    (use-package cider
@@ -1099,60 +1177,60 @@ da-bomb!
 
 
 #+END_SRC
-*** Javascript
-   JavaScript should have three parts:
-   - Syntax highlight (already included)
-   - Syntax verification (with flycheck)
-   - Interactive REPL ... using Skewer
+** Javascript
+  JavaScript should have three parts:
+  - Syntax highlight (already included)
+  - Syntax verification (with flycheck)
+  - Interactive REPL ... using Skewer
 
-**** JS2 Mode
+*** JS2 Mode
 
-  I like the extras found in [[http://www.emacswiki.org/emacs-test/SteveYegge][Steve Yegge]]'s [[https://github.com/mooz/js2-mode][js2-mode]].
+ I like the extras found in [[http://www.emacswiki.org/emacs-test/SteveYegge][Steve Yegge]]'s [[https://github.com/mooz/js2-mode][js2-mode]].
 
-  #+BEGIN_SRC elisp
-    (use-package js2-mode
+ #+BEGIN_SRC elisp
+   (use-package js2-mode
+     :ensure t
+     :interpreter ("node" . js2-mode)
+     :init
+     (setq js-basic-indent 2)
+     (setq-default js2-basic-indent 2
+                   js2-basic-offset 2
+                   js2-auto-indent-p t
+                   js2-cleanup-whitespace t
+                   js2-enter-indents-newline t
+                   js2-indent-on-enter-key t
+                   js2-global-externs (list "window" "module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON" "jQuery" "$"))
+
+     (add-hook 'js2-mode-hook
+               (lambda ()
+                 (push '("function" . ?ƒ) prettify-symbols-alist)))
+
+     (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode)))
+ #+END_SRC
+
+ Colour /defined/ variables with [[https://github.com/ankurdave/color-identifiers-mode][color-identifiers-mode]]:
+
+ #+BEGIN_SRC elisp
+  (use-package color-identifiers-mode
       :ensure t
-      :interpreter ("node" . js2-mode)
       :init
-      (setq js-basic-indent 2)
-      (setq-default js2-basic-indent 2
-                    js2-basic-offset 2
-                    js2-auto-indent-p t
-                    js2-cleanup-whitespace t
-                    js2-enter-indents-newline t
-                    js2-indent-on-enter-key t
-                    js2-global-externs (list "window" "module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON" "jQuery" "$"))
+        (add-hook 'js2-mode-hook 'color-identifiers-mode))
+ #+END_SRC
 
-      (add-hook 'js2-mode-hook
-                (lambda ()
-                  (push '("function" . ?ƒ) prettify-symbols-alist)))
+*** Flycheck and JSHint
 
-      (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode)))
-  #+END_SRC
+ While editing JavaScript is baked into Emacs, it is quite important
+ to have [[http://flycheck.readthedocs.org/][flycheck]] validate the source based on [[http://www.jshint.com/][jshint]], and [[https://github.com/eslint/eslint][eslint]].
+ Let’s prefer =eslint=:
 
-  Colour /defined/ variables with [[https://github.com/ankurdave/color-identifiers-mode][color-identifiers-mode]]:
+ #+BEGIN_SRC elisp
+   (add-hook 'js2-mode-hook
+             (lambda () (flycheck-select-checker "javascript-eslint")))
+ #+END_SRC
 
-  #+BEGIN_SRC elisp
-   (use-package color-identifiers-mode
-       :ensure t
-       :init
-         (add-hook 'js2-mode-hook 'color-identifiers-mode))
-  #+END_SRC
+ Now load and edit a JavaScript file, like [[file:~/jshint-code-test.js][jshint-code-test.js]].
 
-**** Flycheck and JSHint
-
-  While editing JavaScript is baked into Emacs, it is quite important
-  to have [[http://flycheck.readthedocs.org/][flycheck]] validate the source based on [[http://www.jshint.com/][jshint]], and [[https://github.com/eslint/eslint][eslint]].
-  Let’s prefer =eslint=:
-
-  #+BEGIN_SRC elisp
-    (add-hook 'js2-mode-hook
-              (lambda () (flycheck-select-checker "javascript-eslint")))
-  #+END_SRC
-
-  Now load and edit a JavaScript file, like [[file:~/jshint-code-test.js][jshint-code-test.js]].
-
-**** Refactoring JavaScript
+*** Refactoring JavaScript
 
   The [[https://github.com/magnars/js2-refactor.el][js2-refactor]] mode should start with =C-c .= and then a two-letter
   mnemonic shortcut.
@@ -1186,7 +1264,7 @@ da-bomb!
     :config (js2r-add-keybindings-with-prefix "C-c ."))
 #+END_SRC
 
-**** Skewer
+*** Skewer
 
   I also configure Skewer for my [[file:emacs-web.org][HTML and CSS]] files, we need to do the
   same for JavaScript:
@@ -1203,7 +1281,7 @@ da-bomb!
  * C-M-x   :: `skewer-eval-defun'
  * C-c C-k :: `skewer-load-buffer'
 
-**** JSON mode
+*** JSON mode
 #+BEGIN_SRC emacs-lisp
 (use-package json-mode
   :ensure    json-mode
@@ -1212,7 +1290,7 @@ da-bomb!
   :mode      ("\\.\\(json\\)$" . json-mode))
 
 #+END_SRC
-*** YAML
+** YAML
 #+BEGIN_SRC emacs-lisp
 (use-package yaml-mode
   :mode ("\\.\\(yml\\|yaml\\|\\config\\|sls\\)$" . yaml-mode)
@@ -1220,23 +1298,22 @@ da-bomb!
   :defer t)
 
 #+END_SRC
-*** C
+** C
 #+BEGIN_SRC emacs-lisp
  (use-package cc-mode
   :config
   (progn
-    (add-hook 'c-mode-hook (lambda () (c-set-style "bsd")))
-    (add-hook 'java-mode-hook (lambda () (c-set-style "bsd")))
-    (setq tab-width 2)
-    (setq c-basic-offset 2)))
+    (add-hook 'c-mode-hook (lambda () (c-set-style "stroustrup")))
+    (setq-default indent-tabs-mode nil)
+    (setq c-basic-offset 4)))
 #+END_SRC
-*** CSS
+** CSS
 #+BEGIN_SRC emacs-lisp
 (use-package css-mode
   :config (setq css-indent-offset 2)
 )
 #+END_SRC
-*** Terraform
+** Terraform
 pretty terraform highlighting
 #+BEGIN_SRC emacs-lisp
 ;;(use-package terraform-mode
@@ -1252,7 +1329,7 @@ pretty terraform highlighting
 
 #+RESULTS:
 
-** Post Initialisation
+* Post Initialisation
 Let's lower our GC thresholds back down to a sane level.
 
 #+BEGIN_SRC emacs-lisp
