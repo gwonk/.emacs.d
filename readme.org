@@ -275,6 +275,8 @@ previously compiled manually then all of the package initialization will still t
 
     (unless (assoc-default "melpa" package-archives)
       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
+    (unless (assoc-default "nongnu" package-archives)
+      (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/") t))
     ;(unless (assoc-default "elpa" package-archives)
     ;  (add-to-list 'package-archives '("elpa" . "http://elpa.gnu.org/packages/") t))
     ;(unless (assoc-default "org" package-archives)
@@ -1052,6 +1054,7 @@ going to install it and make sure it's loaded immediately.
   (add-hook 'org-mode-hook 'flyspell-mode)
   :diminish visual-line-mode
   :diminish org-indent-mode
+:delight org-mode "✎"
   :defer t
   :bind (("\C-c a" . org-agenda)
 	 ("\C-c c" . org-capture))
@@ -1886,6 +1889,8 @@ show this warning instead."
   (setq org-ref-default-bibliography '("~/org/resources/bibliography/references.bib"))
   (setq org-ref-default-citation-link "citep")
   )
+(use-package org-contrib
+  :ensure t)
 
 (defun org-build-agenda ()
   (interactive)
