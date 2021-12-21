@@ -31,6 +31,7 @@
   - [[#global-keys][Global keys]]
   - [[#which-key][Which-key]]
   - [[#files][Files]]
+  - [[#real-autosave][Real-Autosave]]
   - [[#git][Git]]
   - [[#magit][Magit]]
   - [[#projectile][Projectile]]
@@ -624,6 +625,15 @@ save place and recent files
   (bind-key "C-x f" 'recentf-ido-find-file )
 
 #+END_SRC
+** Real-Autosave
+#+BEGIN_SRC emacs-lisp
+(use-package real-auto-save
+  :ensure t
+  :config
+    (add-hook 'org-mode-hook 'real-auto-save-mode)
+)
+#+END_SRC
+
 ** Git
 
    I like [[https://github.com/syohex/emacs-git-gutter-fringe][git-gutter-fringe]]:
@@ -1077,9 +1087,9 @@ going to install it and make sure it's loaded immediately.
 
 ;;; Code:
 ;; Some general settings
-(setq org-directory "~/org")
-(setq org-default-notes-file "~/org/refile.org")
-(defvar org-default-diary-file "~/org/diary.org")
+(setq org-default-notes-file "~/org/gtd/refile.org")
+(defvar org-default-diary-file "~/org/gtd/diary.org")
+
 (setq org-log-into-drawer t)
 
 ;; Display properties
@@ -1392,7 +1402,7 @@ Switch projects and subprojects from NEXT back to TODO"
 
 ;;;; General Agenda Settings
 
-(setq org-agenda-files (quote ("~/org" "~/org/archive")))
+(setq org-agenda-files (quote ("~/org" "~/org/gtd" "~/org/archive")))
 (setq org-agenda-tags-column org-tags-column)
 (setq org-agenda-sticky t)
 (setq org-agenda-inhibit-startup nil)
