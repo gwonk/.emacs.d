@@ -1185,9 +1185,9 @@ going to install it and make sure it's loaded immediately.
 	  "* %?\n%u")
 	 ("m" "Meeting" entry (file org-default-notes-file)
 	  "* Meeting with %? :MEETING:\n" :clock-in t :clock-resume t)
-	 ("d" "Diary" entry (file+datetree "~/org/diary.org")
+	 ("d" "Diary" entry (file+datetree "~/org/gtd/diary.org")
 	  "* %?\n%U\n" :clock-in t :clock-resume t)
-	 ("D" "Daily Log" entry (file "~/org/daily-log.org")
+	 ("D" "Daily Log" entry (file "~/org/gtd/daily-log.org")
 	  "* %u %?\n#+BEGIN: gjs-daily-clocktable :maxlevel 4 :date \"%u\" :link t :compact t \n#+END:\n\n*Summary*: \n\n*Problem*: \n\n*Insight*: \n\n*Tomorrow*: ")
 	 ("i" "Idea" entry (file org-default-notes-file)
 	  "* %? :IDEA: \n%u" :clock-in t :clock-resume t)
@@ -1402,7 +1402,7 @@ Switch projects and subprojects from NEXT back to TODO"
 
 ;;;; General Agenda Settings
 
-(setq org-agenda-files (quote ("~/org" "~/org/gtd" "~/org/archive")))
+(setq org-agenda-files (quote ("~/org" "~/org/gtd" "~/org/gtd/archive")))
 (setq org-agenda-tags-column org-tags-column)
 (setq org-agenda-sticky t)
 (setq org-agenda-inhibit-startup nil)
