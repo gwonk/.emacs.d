@@ -626,7 +626,8 @@ save place and recent files
 
 #+END_SRC
 ** Real-Autosave
-#+BEGIN_SRC emacs-lisp
+Doesn't appear to work as I expected it to.
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package real-auto-save
   :ensure t
   :config
@@ -1062,6 +1063,7 @@ going to install it and make sure it's loaded immediately.
   :init
   (add-hook 'org-mode-hook 'visual-line-mode)
   (add-hook 'org-mode-hook 'flyspell-mode)
+(add-hook 'org-mode-hook 'auto-save-visited-mode)
   :diminish visual-line-mode
   :diminish org-indent-mode
 :delight org-mode "✎"
@@ -2005,26 +2007,27 @@ package that automatically generates an up to date table of contents for us.
 ** Evil Mode
 Evil Evil Evil
 #+BEGIN_SRC emacs-lisp
-  (use-package evil
-        :ensure t
-        :init
-          (setq evil-search-module 'evil-search)
-          (setq evil-ex-complete-emacs-commands nil)
-          (setq evil-vsplit-window-right t)
-          (setq evil-split-window-below t)
-          (setq evil-shift-rount nil)
-          (setq evil-want-C-u-scroll t)
-          (evil-mode 1))
+    (use-package evil
+          :ensure t
+          :init
+            (setq evil-search-module 'evil-search)
+            (setq evil-ex-complete-emacs-commands nil)
+            (setq evil-vsplit-window-right t)
+            (setq evil-split-window-below t)
+            (setq evil-shift-rount nil)
+            (setq evil-want-C-u-scroll t)
+            (evil-mode 1))
 
-  (use-package evil-org
-      :ensure t
-      :after org
-      :hook (org-mode . (lambda () evil-org-mode))
-      :init
-  (evil-org-mode 1)
-        (require 'evil-org-agenda)
-  (evil-set-initial-state 'org-agenda-mode 'normal)
-      (evil-org-agenda-set-keys))
+    (use-package evil-org
+        :ensure t
+        :after org
+        :hook (org-mode . (lambda () evil-org-mode))
+        :init
+    (evil-org-mode 1)
+          (require 'evil-org-agenda)
+    (evil-set-initial-state 'org-agenda-mode 'normal)
+        ;(evil-org-agenda-set-keys)
+  )
 #+END_SRC
 
 ** EShell
@@ -2195,18 +2198,13 @@ Start the eshell and bind the key to the swap function.
   #+END_SRC
 
 Use smartparens
-#+BEGIN_SRC
+#+BEGIN_SRC emacs-lisp
   (use-package smartparens
-  :ensure    smartparens
-  :init      (progn
-               (require 'smartparens)
-               (load-library "smartparens-config"))
-
-  :config   (progn
+  :ensure    t
+  :config
+               (require 'smartparens-config)
               (smartparens-global-mode t)
-              (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))
-              (sp-with-modes '(html-mode sgml-mode nxml-mode web-mode)
-                (sp-local-pair "<" ">"))
+:diminish smartparens-mode
   :bind
   (("C-M-k" . sp-kill-sexp-with-a-twist-of-lime)
    ("C-M-f" . sp-forward-sexp)
@@ -2426,12 +2424,13 @@ da-bomb!
 #+END_SRC
 ** C
 #+BEGIN_SRC emacs-lisp
- (use-package cc-mode
-  :config
-  (progn
-    (add-hook 'c-mode-hook (lambda () (c-set-style "stroustrup")))
-    (setq-default indent-tabs-mode nil)
-    (setq c-basic-offset 4)))
+  (use-package cc-mode
+   :config
+   (progn
+     (add-hook 'c-mode-hook (lambda () (c-set-style "stroustrup"))
+     (setq-default indent-tabs-mode nil)
+     (setq c-basic-offset 4)))
+  )
 #+END_SRC
 ** CSS
 #+BEGIN_SRC emacs-lisp
