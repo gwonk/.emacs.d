@@ -1105,6 +1105,7 @@ going to install it and make sure it's loaded immediately.
 ;; Set default column view headings: Task Effort Clock_Summary
 (setq org-columns-default-format "%50ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM %16TIMESTAMP_IA")
 
+(setq org-log-into-drawer t)
 
 ;; ;; == Tags ==
 ;; (setq org-tag-alist '((:startgroup)
