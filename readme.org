@@ -31,7 +31,6 @@
   - [[#global-keys][Global keys]]
   - [[#which-key][Which-key]]
   - [[#files][Files]]
-  - [[#real-autosave][Real-Autosave]]
   - [[#git][Git]]
   - [[#magit][Magit]]
   - [[#projectile][Projectile]]
@@ -45,9 +44,13 @@
   - [[#ido][Ido]]
   - [[#undo][Undo]]
 - [[#org-configuration][Org Configuration]]
-  - [[#macos][MacOS]]
+  - [[#agenda][Agenda]]
+  - [[#org-babel][Org Babel]]
+  - [[#org-capture][Org Capture]]
+  - [[#revealjs][Reveal.js]]
   - [[#toc-org][Toc-org]]
-  - [[#evil-mode][Evil Mode]]
+- [[#macos][MacOS]]
+- [[#evil-mode][Evil Mode]]
   - [[#eshell][EShell]]
 - [[#programming][Programming]]
   - [[#eldoc][Eldoc]]
@@ -625,15 +628,6 @@ save place and recent files
   (bind-key "C-x f" 'recentf-ido-find-file )
 
 #+END_SRC
-** Real-Autosave
-Doesn't appear to work as I expected it to.
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package real-auto-save
-  :ensure t
-  :config
-    (add-hook 'org-mode-hook 'real-auto-save-mode)
-)
-#+END_SRC
 
 ** Git
 
@@ -1063,7 +1057,7 @@ going to install it and make sure it's loaded immediately.
   :init
   (add-hook 'org-mode-hook 'visual-line-mode)
   (add-hook 'org-mode-hook 'flyspell-mode)
-(add-hook 'org-mode-hook 'auto-save-visited-mode)
+  (add-hook 'org-mode-hook 'auto-save-visited-mode)
   :diminish visual-line-mode
   :diminish org-indent-mode
 :delight org-mode "✎"
@@ -1381,6 +1375,8 @@ Switch projects and subprojects from NEXT back to TODO"
 
 ;; Also ensure that NEXT projects are switched to TODO when clocking in
 (add-hook 'org-clock-in-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+
+** Agenda
 
 ;; == Agenda ==
 
@@ -1785,13 +1781,17 @@ show this warning instead."
 
   ;; Run/highlight code using babel in org-mode
 
+** Org Babel
 
   (org-babel-do-load-languages
    'org-babel-load-languages
    '(
      (C . t)
      (shell . t)
+     (plantuml . t)
      ))
+
+     (setq org-plantuml-jar-path "/usr/local/Cellar/plantuml/1.2022.0/libexec/plantuml.jar")
 
   ;; Syntax hilight in #+begin_src blocks
   (setq org-src-fontify-natively t)
@@ -1800,8 +1800,11 @@ show this warning instead."
   ;; Display inline images after running code
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
 
+** Org Capture
+
   ;; Capture mode
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
+
 ;  (general-define-key
 ;   :keymaps 'org-capture-mode-map
 ;   :states '(normal motion)
@@ -1964,7 +1967,28 @@ show this warning instead."
 ;        (buffer-string))))))
 #+END_SRC
 
-** MacOS
+** Reveal.js
+#+begin_src emacs-lisp
+    (use-package org-re-reveal
+        :ensure t)
+    (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+(setq org-re-reveal-revealjs-version "4")
+   #+end_src
+
+   #+RESULTS:
+   : http://cdn.jsdeliver.net/reveal.js/3.0.0
+
+** Toc-org
+Let's install and load the =toc-org= package after org mode is loaded. This is the
+package that automatically generates an up to date table of contents for us.
+
+#+BEGIN_SRC emacs-lisp
+(use-package toc-org
+  :after org
+  :init (add-hook 'org-mode-hook #'toc-org-enable))
+#+END_SRC
+
+* MacOS
 MacOS Customisations
 #+BEGIN_SRC emacs-lisp
     ;; Are we on a mac?
@@ -1993,19 +2017,9 @@ MacOS Customisations
   (exec-path-from-shell-initialize))
 
       )
-
-#+END_SRC
-** Toc-org
-Let's install and load the =toc-org= package after org mode is loaded. This is the
-package that automatically generates an up to date table of contents for us.
-
-#+BEGIN_SRC emacs-lisp
-(use-package toc-org
-  :after org
-  :init (add-hook 'org-mode-hook #'toc-org-enable))
 #+END_SRC
 
-** Evil Mode
+* Evil Mode
 Evil Evil Evil
 #+BEGIN_SRC emacs-lisp
     (use-package evil
@@ -2173,12 +2187,14 @@ Start the eshell and bind the key to the swap function.
 
 ** Parens
 
-
 #+BEGIN_SRC emacs-lisp
 (use-package paren
-  :ensure nil
-  :config
-  (show-paren-mode +1))
+    :ensure nil
+    :init
+    (show-paren-mode +1)
+    (setq show-paren-style 'expression)
+    (set-face-attribute 'show-paren-match nil :foreground nil :weight 'extra-bold :inverse-video nil)
+)
 #+END_SRC
   Use paredit
 
