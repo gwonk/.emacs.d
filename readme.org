@@ -1375,9 +1375,11 @@ Switch projects and subprojects from NEXT back to TODO"
 
 ;; Also ensure that NEXT projects are switched to TODO when clocking in
 (add-hook 'org-clock-in-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+#+END_SRC
 
 ** Agenda
 
+#+BEGIN_SRC emacs-lisp
 ;; == Agenda ==
 
 ;(load-file "~/.emacs.d/config/gs-org-agenda.el")
@@ -1778,20 +1780,26 @@ show this warning instead."
   ;; == Agenda ==
   (defvar org-agenda-window-setup)
   (setq org-agenda-window-setup 'current-window)
-
-  ;; Run/highlight code using babel in org-mode
+#+END_SRC
 
 ** Org Babel
+   Run/highlight code using babel in org-mode
 
+#+BEGIN_SRC emacs-lisp
+   (with-eval-after-load 'org
   (org-babel-do-load-languages
    'org-babel-load-languages
    '(
      (C . t)
      (shell . t)
      (plantuml . t)
-     ))
+     )))
 
+(use-package plantuml-mode
+:ensure t
+:init
      (setq org-plantuml-jar-path "/usr/local/Cellar/plantuml/1.2022.0/libexec/plantuml.jar")
+)
 
   ;; Syntax hilight in #+begin_src blocks
   (setq org-src-fontify-natively t)
@@ -1799,9 +1807,11 @@ show this warning instead."
   (setq org-confirm-babel-evaluate nil)
   ;; Display inline images after running code
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+#+END_SRC
 
 ** Org Capture
 
+#+BEGIN_SRC emacs-lisp
   ;; Capture mode
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
 
@@ -1968,15 +1978,19 @@ show this warning instead."
 #+END_SRC
 
 ** Reveal.js
-#+begin_src emacs-lisp
-    (use-package org-re-reveal
-        :ensure t)
-    (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+#+BEGIN_SRC emacs-lisp
+(require 'org-re-reveal)
+
+(use-package oer-reveal
+    :after org
+    :ensure t)
+
+(setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
 (setq org-re-reveal-revealjs-version "4")
-   #+end_src
+#+END_SRC
 
    #+RESULTS:
-   : http://cdn.jsdeliver.net/reveal.js/3.0.0
+   : 4
 
 ** Toc-org
 Let's install and load the =toc-org= package after org mode is loaded. This is the
