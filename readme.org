@@ -42,7 +42,9 @@
   - [[#ivy][Ivy]]
   - [[#counsel][Counsel]]
   - [[#ido][Ido]]
-  - [[#undo][Undo]]
+  - [[#undo-tree][Undo Tree]]
+  - [[#uniquify-buffer-names][Uniquify Buffer Names]]
+  - [[#which-key-support][Which Key support]]
 - [[#org-configuration][Org Configuration]]
   - [[#agenda][Agenda]]
   - [[#org-babel][Org Babel]]
@@ -67,8 +69,8 @@
     - [[#json-mode][JSON mode]]
   - [[#yaml][YAML]]
   - [[#c][C]]
-  - [[#css][CSS]]
-  - [[#terraform][Terraform]]
+  - [[#nand-2-tetris-packages][Nand 2 Tetris packages]]
+- [[#emacs-server][Emacs Server]]
 - [[#post-initialisation][Post Initialisation]]
 
 ** About this file
@@ -701,17 +703,24 @@ Projectile is a quick and easy project management package that "just works". We'
 going to install it and make sure it's loaded immediately.
 
 #+BEGIN_SRC emacs-lisp
-(use-package projectile
-  :ensure projectile
-  :config
-      (progn (setq projectile-enable-caching t)
-                      (setq projectile-require-project-root nil)
-                      (setq projectile-completion-system 'ivy)
-                      (add-to-list 'projectile-globally-ignored-files ".DS_Store")
-                    )
-                    :defer (projectile-cleanup-known-projects)
-                    :delight '(:eval (concat "𝓟/" (projectile-project-name)))
-                  )
+            (use-package projectile
+            :ensure t
+          :init
+        (projectile-mode +1)
+      :bind (:map projectile-mode-map
+    ("s-p" . projectile-command-map)
+  ("C-c p" . projectile-command-map)))
+              ;; (use-package projectile
+              ;;   :ensure projectile
+              ;;   :config
+              ;;       (progn (setq projectile-enable-caching t)
+              ;;                       (setq projectile-require-project-root nil)
+              ;;                       (setq projectile-completion-system 'default)
+              ;;                       (add-to-list 'projectile-globally-ignored-files ".DS_Store")
+              ;;                     )
+              ;;                     :defer (projectile-cleanup-known-projects)
+              ;;                     :delight '(:eval (concat "𝓟/" (projectile-project-name)))
+              ;;                   )
 #+END_SRC
 
 * Completion Frameworks
@@ -1031,12 +1040,15 @@ going to install it and make sure it's loaded immediately.
   :init (ido-vertical-mode))
 #+END_SRC
 
-** Undo
+** Undo Tree
 #+BEGIN_SRC emacs-lisp
 (use-package undo-tree
   :diminish undo-tree-mode
   :ensure t)
+#+END_SRC
 
+** Uniquify Buffer Names
+#+begin_src emacs-lisp
 ;; Add parts of each file's directory to the buffer name if not unique
 (use-package uniquify
    :ensure nil
@@ -1045,336 +1057,346 @@ going to install it and make sure it's loaded immediately.
    (setq uniquify-separator "/")
    (setq uniquify-after-kill-buffer-p t)
    (setq uniquify-ignore-buffers-re "^\\*"))
+#+end_src
+
+** Which Key support
+#+BEGIN_SRC emacs-lisp
+        (use-package which-key
+      :ensure t
+    :init
+  (require 'which-key)
+(which-key-mode))
+#+END_SRC
 
 #+END_SRC
 * Org Configuration
 
 #+BEGIN_SRC emacs-lisp
-;(use-package org
-;      :ensure t
-;      :delight org-mode "✎")
-(use-package org
-  :init
-  (add-hook 'org-mode-hook 'visual-line-mode)
-  (add-hook 'org-mode-hook 'flyspell-mode)
-  (add-hook 'org-mode-hook 'auto-save-visited-mode)
-  :diminish visual-line-mode
-  :diminish org-indent-mode
-:delight org-mode "✎"
-  :defer t
-  :bind (("\C-c a" . org-agenda)
-	 ("\C-c c" . org-capture))
-  :config
+    ;(use-package org
+    ;      :ensure t
+    ;      :delight org-mode "✎")
+    (use-package org
+      :init
+      (add-hook 'org-mode-hook 'visual-line-mode)
+      (add-hook 'org-mode-hook 'flyspell-mode)
+      (add-hook 'org-mode-hook 'auto-save-visited-mode)
+      :diminish visual-line-mode
+      :diminish org-indent-mode
+    :delight org-mode "✎"
+      :defer t
+      :bind (("\C-c a" . org-agenda)
+         ("\C-c c" . org-capture))
+      :config
 
-  ;; Expansion for blocks "<s" -> "#+BEGIN_SRC"
-  (require 'org-tempo)
+      ;; Expansion for blocks "<s" -> "#+BEGIN_SRC"
+      (require 'org-tempo)
 
-  ;; Fix evil-auto-indent for org buffers.
-  (defun gs-org-disable-evil-auto-indent nil
-    "Disables evil's auto-indent for org."
-    (setq evil-auto-indent nil)
-    )
-  (add-hook 'org-mode-hook #'gs-org-disable-evil-auto-indent)
+      ;; Fix evil-auto-indent for org buffers.
+      (defun gs-org-disable-evil-auto-indent nil
+        "Disables evil's auto-indent for org."
+        (setq evil-auto-indent nil)
+        )
+      (add-hook 'org-mode-hook #'gs-org-disable-evil-auto-indent)
 
-  ;; Custom functions for emacs & org mode
-;  (load-file "~/.emacs.d/config/gs-org.el")
+      ;; Custom functions for emacs & org mode
+    ;  (load-file "~/.emacs.d/config/gs-org.el")
 
-(require 'org-agenda)
+    (require 'org-agenda)
 
-;;; Code:
-;; Some general settings
-(setq org-default-notes-file "~/org/gtd/refile.org")
-(defvar org-default-diary-file "~/org/gtd/diary.org")
+    ;;; Code:
+    ;; Some general settings
+    (setq org-default-notes-file "~/org/gtd/refile.org")
+    (defvar org-default-diary-file "~/org/gtd/diary.org")
 
-(setq org-log-into-drawer t)
+    (setq org-log-into-drawer t)
 
-;; Display properties
-(setq org-cycle-separator-lines 0)
-(setq org-tags-column -80)
-(setq org-latex-prefer-user-labels t)
+    ;; Display properties
+    (setq org-cycle-separator-lines 0)
+    (setq org-tags-column -80)
+    (setq org-latex-prefer-user-labels t)
 
-;; Dim blocked tasks (and other settings)
-(setq org-enforce-todo-dependencies t)
+    ;; Dim blocked tasks (and other settings)
+    (setq org-enforce-todo-dependencies t)
 
-;; Set default column view headings: Task Effort Clock_Summary
-(setq org-columns-default-format "%50ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM %16TIMESTAMP_IA")
+    ;; Set default column view headings: Task Effort Clock_Summary
+    (setq org-columns-default-format "%50ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM %16TIMESTAMP_IA")
 
-(setq org-log-into-drawer t)
+    (setq org-log-into-drawer t)
 
-;; ;; == Tags ==
-;; (setq org-tag-alist '((:startgroup)
-;; 		      ("@errand" . ?e)
-;; 		      ("@campus" . ?c)
-;; 		      ("@home" . ?h)
-;; 		      (:endgroup)
-;; 		      ("WAITING" . ?w)
-;; 		      ("PERSONAL" . ?P)
-;; 		      ("RRG" . ?W)
-;; 		      ("NOTE" . ?n)
-;; 		      ("AR" . ?a)
-;; 		      ))
+    ;; ;; == Tags ==
+    ;; (setq org-tag-alist '((:startgroup)
+    ;; 		      ("@errand" . ?e)
+    ;; 		      ("@campus" . ?c)
+    ;; 		      ("@home" . ?h)
+    ;; 		      (:endgroup)
+    ;; 		      ("WAITING" . ?w)
+    ;; 		      ("PERSONAL" . ?P)
+    ;; 		      ("RRG" . ?W)
+    ;; 		      ("NOTE" . ?n)
+    ;; 		      ("AR" . ?a)
+    ;; 		      ))
 
-;; Allow setting single tags without the menu
-(setq org-fast-tag-selection-single-key 'expert)
+    ;; Allow setting single tags without the menu
+    (setq org-fast-tag-selection-single-key 'expert)
 
-;; Include the todo keywords
-(setq org-fast-tag-selection-include-todo t)
+    ;; Include the todo keywords
+    (setq org-fast-tag-selection-include-todo t)
 
-;; == Custom State Keywords ==
-(setq org-use-fast-todo-selection t)
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "PROJ(p)" "|" "DONE(d)")
-	(sequence "TASK(T)")
-	(sequence "AMOTIVATOR(MA)" "TMOTIVATOR(MT)" "CMOTIVATOR(MC)")
-	(sequence "WAITING(w@/!)" "INACTIVE(i)" "SOMEDAY(s)" "|" "CANCELLED(c@/!)")))
-;; Custom colors for the keywords
-(setq org-todo-keyword-faces
-      '(("TODO" :foreground "red" :weight bold)
-	("TASK" :foreground "#5C888B" :weight bold)
-	("NEXT" :foreground "blue" :weight bold)
-	("PROJ" :foreground "magenta" :weight bold)
-	("AMOTIVATOR" :foreground "#F06292" :weight bold)
-	("TMOTIVATOR" :foreground "#AB47BC" :weight bold)
-	("CMOTIVATOR" :foreground "#5E35B1" :weight bold)
-	("DONE" :foreground "forest green" :weight bold)
-	("WAITING" :foreground "orange" :weight bold)
-	("INACTIVE" :foreground "magenta" :weight bold)
-	("SOMEDAY" :foreground "cyan" :weight bold)
-	("CANCELLED" :foreground "forest green" :weight bold)))
-;; Auto-update tags whenever the state is changed
-(setq org-todo-state-tags-triggers
-      '(("CANCELLED" ("CANCELLED" . t))
-	("WAITING" ("SOMEDAY") ("INACTIVE") ("WAITING" . t))
-	("INACTIVE" ("WAITING") ("SOMEDAY") ("INACTIVE" . t))
-	("SOMEDAY" ("WAITING") ("INACTIVE") ("SOMEDAY" . t))
-	(done ("WAITING") ("INACTIVE") ("SOMEDAY"))
-	("TODO" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("TASK" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("NEXT" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("PROJ" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("AMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("TMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("CMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
-	("DONE" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))))
+    ;; == Custom State Keywords ==
+    (setq org-use-fast-todo-selection t)
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "NEXT(n)" "PROJ(p)" "|" "DONE(d)")
+        (sequence "TASK(T)")
+        (sequence "AMOTIVATOR(MA)" "TMOTIVATOR(MT)" "CMOTIVATOR(MC)")
+        (sequence "WAITING(w@/!)" "INACTIVE(i)" "SOMEDAY(s)" "|" "CANCELLED(c@/!)")))
+    ;; Custom colors for the keywords
+    (setq org-todo-keyword-faces
+          '(("TODO" :foreground "red" :weight bold)
+        ("TASK" :foreground "#5C888B" :weight bold)
+        ("NEXT" :foreground "blue" :weight bold)
+        ("PROJ" :foreground "magenta" :weight bold)
+        ("AMOTIVATOR" :foreground "#F06292" :weight bold)
+        ("TMOTIVATOR" :foreground "#AB47BC" :weight bold)
+        ("CMOTIVATOR" :foreground "#5E35B1" :weight bold)
+        ("DONE" :foreground "forest green" :weight bold)
+        ("WAITING" :foreground "orange" :weight bold)
+        ("INACTIVE" :foreground "magenta" :weight bold)
+        ("SOMEDAY" :foreground "cyan" :weight bold)
+        ("CANCELLED" :foreground "forest green" :weight bold)))
+    ;; Auto-update tags whenever the state is changed
+    (setq org-todo-state-tags-triggers
+          '(("CANCELLED" ("CANCELLED" . t))
+        ("WAITING" ("SOMEDAY") ("INACTIVE") ("WAITING" . t))
+        ("INACTIVE" ("WAITING") ("SOMEDAY") ("INACTIVE" . t))
+        ("SOMEDAY" ("WAITING") ("INACTIVE") ("SOMEDAY" . t))
+        (done ("WAITING") ("INACTIVE") ("SOMEDAY"))
+        ("TODO" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("TASK" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("NEXT" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("PROJ" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("AMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("TMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("CMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("DONE" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))))
 
-(defun gs/mark-next-done-parent-tasks-todo ()
-  "Visit each parent task and change NEXT (or DONE) states to TODO."
-  ;; Don't change the value if new state is "DONE"
-  (let ((mystate (or (and (fboundp 'org-state)
-                          (member state
-				  (list "NEXT" "TODO")))
-                     (member (nth 2 (org-heading-components))
-			     (list "NEXT" "TODO")))))
-    (when mystate
-      (save-excursion
-        (while (org-up-heading-safe)
-          (when (member (nth 2 (org-heading-components)) (list "NEXT" "DONE"))
-            (org-todo "TODO")))))))
-;; Note: I want to disable this for now
-;; (add-hook 'org-after-todo-state-change-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+    (defun gs/mark-next-done-parent-tasks-todo ()
+      "Visit each parent task and change NEXT (or DONE) states to TODO."
+      ;; Don't change the value if new state is "DONE"
+      (let ((mystate (or (and (fboundp 'org-state)
+                              (member state
+                      (list "NEXT" "TODO")))
+                         (member (nth 2 (org-heading-components))
+                     (list "NEXT" "TODO")))))
+        (when mystate
+          (save-excursion
+            (while (org-up-heading-safe)
+              (when (member (nth 2 (org-heading-components)) (list "NEXT" "DONE"))
+                (org-todo "TODO")))))))
+    ;; Note: I want to disable this for now
+    ;; (add-hook 'org-after-todo-state-change-hook 'gs/mark-next-done-parent-tasks-todo 'append)
 
-;; == Capture Mode Settings ==
-;; Define the custum capture templates
-(defvar org-capture-templates
-       '(("t" "Todo" entry (file org-default-notes-file)
-	  "* TODO %?\n%u\n%a\n" :clock-in t :clock-resume t)
-	 ("b" "Blank" entry (file org-default-notes-file)
-	  "* %?\n%u")
-	 ("m" "Meeting" entry (file org-default-notes-file)
-	  "* Meeting with %? :MEETING:\n" :clock-in t :clock-resume t)
-	 ("d" "Diary" entry (file+datetree "~/org/gtd/diary.org")
-	  "* %?\n%U\n" :clock-in t :clock-resume t)
-	 ("D" "Daily Log" entry (file "~/org/gtd/daily-log.org")
-	  "* %u %?\n#+BEGIN: gjs-daily-clocktable :maxlevel 4 :date \"%u\" :link t :compact t \n#+END:\n\n*Summary*: \n\n*Problem*: \n\n*Insight*: \n\n*Tomorrow*: ")
-	 ("i" "Idea" entry (file org-default-notes-file)
-	  "* %? :IDEA: \n%u" :clock-in t :clock-resume t)
-	 ("n" "Next Task" entry (file+headline org-default-notes-file "Tasks")
-	  "** NEXT %? \nDEADLINE: %t")
-	 ))
+    ;; == Capture Mode Settings ==
+    ;; Define the custum capture templates
+    (defvar org-capture-templates
+           '(("t" "Todo" entry (file org-default-notes-file)
+          "* TODO %?\n%u\n%a\n" :clock-in t :clock-resume t)
+         ("b" "Blank" entry (file org-default-notes-file)
+          "* %?\n%u")
+         ("m" "Meeting" entry (file org-default-notes-file)
+          "* Meeting with %? :MEETING:\n" :clock-in t :clock-resume t)
+         ("d" "Diary" entry (file+datetree "~/org/gtd/diary.org")
+          "* %?\n%U\n" :clock-in t :clock-resume t)
+         ("D" "Daily Log" entry (file "~/org/gtd/daily-log.org")
+          "* %u %?\n#+BEGIN: gjs-daily-clocktable :maxlevel 4 :date \"%u\" :link t :compact t \n#+END:\n\n*Summary*: \n\n*Problem*: \n\n*Insight*: \n\n*Tomorrow*: ")
+         ("i" "Idea" entry (file org-default-notes-file)
+          "* %? :IDEA: \n%u" :clock-in t :clock-resume t)
+         ("n" "Next Task" entry (file+headline org-default-notes-file "Tasks")
+          "** NEXT %? \nDEADLINE: %t")
+         ))
 
-;; == Refile ==
-;; Targets include this file and any file contributing to the agenda - up to 9 levels deep
-(setq org-refile-targets (quote ((nil :maxlevel . 9)
-                                 (org-agenda-files :maxlevel . 9))))
+    ;; == Refile ==
+    ;; Targets include this file and any file contributing to the agenda - up to 9 levels deep
+    (setq org-refile-targets (quote ((nil :maxlevel . 9)
+                                     (org-agenda-files :maxlevel . 9))))
 
-;;  Be sure to use the full path for refile setup
-(setq org-refile-use-outline-path t)
-(setq org-outline-path-complete-in-steps nil)
+    ;;  Be sure to use the full path for refile setup
+    (setq org-refile-use-outline-path t)
+    (setq org-outline-path-complete-in-steps nil)
 
-;; Allow refile to create parent tasks with confirmation
-(setq org-refile-allow-creating-parent-nodes 'confirm)
+    ;; Allow refile to create parent tasks with confirmation
+    (setq org-refile-allow-creating-parent-nodes 'confirm)
 
-;; == Archive ==
-(setq org-archive-location "archive/%s_archive::")
-(defvar org-archive-file-header-format "#+FILETAGS: ARCHIVE\nArchived entries from file %s\n")
+    ;; == Archive ==
+    (setq org-archive-location "archive/%s_archive::")
+    (defvar org-archive-file-header-format "#+FILETAGS: ARCHIVE\nArchived entries from file %s\n")
 
-;; == Habits ==
-(require 'org-habit)
-(add-to-list 'org-modules 'org-habit)
-(setq org-habit-graph-column 44)
-(setq org-habit-show-habits-only-for-today t)
+    ;; == Habits ==
+    (require 'org-habit)
+    (add-to-list 'org-modules 'org-habit)
+    (setq org-habit-graph-column 44)
+    (setq org-habit-show-habits-only-for-today t)
 
-;; == Checklists ==
-;(require 'org-checklist)
+    ;; == Checklists ==
+    ;(require 'org-checklist)
 
-;; == Org-ID ==
-(require 'org-id)
-;; I might also need org-ref
+    ;; == Org-ID ==
+    (require 'org-id)
+    ;; I might also need org-ref
 
-;;;; bh/helper-functions
+    ;;;; bh/helper-functions
 
-(defun gs/is-project-p ()
-  "A task with a 'PROJ' keyword"
-  (member (nth 2 (org-heading-components)) '("PROJ")))
+    (defun gs/is-project-p ()
+      "A task with a 'PROJ' keyword"
+      (member (nth 2 (org-heading-components)) '("PROJ")))
 
-(defun bh/is-project-p ()
-  "Any task with a todo keyword subtask."
-  (save-restriction
-    (widen)
-    (let ((has-subtask)
-          (subtree-end (save-excursion (org-end-of-subtree t)))
-          (is-a-task (member (nth 2 (org-heading-components)) org-todo-keywords-1)))
-      (save-excursion
-        (forward-line 1)
-        (while (and (not has-subtask)
-                    (< (point) subtree-end)
-                    (re-search-forward "^\*+ " subtree-end t))
-          (when (member (org-get-todo-state) org-todo-keywords-1)
-            (setq has-subtask t))))
-      (and is-a-task has-subtask))))
+    (defun bh/is-project-p ()
+      "Any task with a todo keyword subtask."
+      (save-restriction
+        (widen)
+        (let ((has-subtask)
+              (subtree-end (save-excursion (org-end-of-subtree t)))
+              (is-a-task (member (nth 2 (org-heading-components)) org-todo-keywords-1)))
+          (save-excursion
+            (forward-line 1)
+            (while (and (not has-subtask)
+                        (< (point) subtree-end)
+                        (re-search-forward "^\*+ " subtree-end t))
+              (when (member (org-get-todo-state) org-todo-keywords-1)
+                (setq has-subtask t))))
+          (and is-a-task has-subtask))))
 
-(defun gs/find-project-task ()
-  "Any task with a todo keyword that is in a project subtree"
-  (save-restriction
-    (widen)
-    (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
-      (while (org-up-heading-safe)
-	(when (member (nth 2 (org-heading-components)) '("PROJ"))
-	  (setq parent-task (point))))
-      (goto-char parent-task)
-      parent-task)))
-
-(defun gs/is-project-subtree-p ()
-  "Any task with a todo keyword that is in a project subtree.
-Callers of this function already widen the buffer view."
-  (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
-                              (point))))
-    (save-excursion
-      (gs/find-project-task)
-      (if (equal (point) task)
-          nil t))))
-
-
-(defun bh/find-project-task ()
-  "Move point to the parent (project) task if any."
-  (save-restriction
-    (widen)
-    (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
-      (while (org-up-heading-safe)
-        (when (member (nth 2 (org-heading-components)) org-todo-keywords-1)
+    (defun gs/find-project-task ()
+      "Any task with a todo keyword that is in a project subtree"
+      (save-restriction
+        (widen)
+        (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
+          (while (org-up-heading-safe)
+        (when (member (nth 2 (org-heading-components)) '("PROJ"))
           (setq parent-task (point))))
-      (goto-char parent-task)
-      parent-task)))
+          (goto-char parent-task)
+          parent-task)))
 
-(defun bh/is-project-subtree-p ()
-  "Any task with a todo keyword that is in a project subtree.
-Callers of this function already widen the buffer view."
-  (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
-                              (point))))
-    (save-excursion
-      (bh/find-project-task)
-      (if (equal (point) task)
-          nil
-        t))))
-
-;; == Contacts ==
-;(require 'org-contacts)
-
-(defun gs-store-org-headline ()
-  (interactive)
-  (when (and (eq major-mode 'org-mode)
-             (org-at-heading-p))
-    (org-store-link-props
-     :type "file"
-     :link (format "file:*%s" (nth 4 (org-heading-components)))
-     :description (nth 4 (org-heading-components)))))
-
-(defun gstest ()
-  (interactive)
-  ;; Just link to current headline
-  (setq cpltxt (concat "file:"
-		       (abbreviate-file-name
-			(buffer-file-name (buffer-base-buffer)))))
-  ;; Add a context search string
-  (when t
-    (let* ((element (org-element-at-point))
-	   (name (org-element-property :name element)))
-      (setq txt (cond
-		 ((org-at-heading-p) nil)
-		 (name)
-		 ((org-region-active-p)
-		  (buffer-substring (region-beginning) (region-end)))))
-      (when (or (null txt) (string-match "\\S-" txt))
-	(setq cpltxt
-	      (concat cpltxt "::"
-		      (condition-case nil
-			  (org-make-org-heading-search-string txt)
-			(error "")))
-	      desc (or name
-		       (nth 4 (ignore-errors (org-heading-components)))
-		       "NONE")))))
-  (when (string-match "::\\'" cpltxt)
-    (setq cpltxt (substring cpltxt 0 -2)))
-  (setq link cpltxt)
-  link
-  )
+    (defun gs/is-project-subtree-p ()
+      "Any task with a todo keyword that is in a project subtree.
+    Callers of this function already widen the buffer view."
+      (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
+                                  (point))))
+        (save-excursion
+          (gs/find-project-task)
+          (if (equal (point) task)
+              nil t))))
 
 
+    (defun bh/find-project-task ()
+      "Move point to the parent (project) task if any."
+      (save-restriction
+        (widen)
+        (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
+          (while (org-up-heading-safe)
+            (when (member (nth 2 (org-heading-components)) org-todo-keywords-1)
+              (setq parent-task (point))))
+          (goto-char parent-task)
+          parent-task)))
 
-(defun gs-helm-org-link-to-contact ()
-  (interactive)
-  (if (eq major-mode 'org-mode)
-      (let ((temp-point (point))
-	    (temp-buffer (current-buffer))
-	    (org-refile-targets (quote (("~/org/contacts.org" :level . 2))))
-	   ;; (org-refile-targets (quote ((("~/org/contacts.org")) :maxlevel . 9)))
-	    )
-	(org-refile '(4))
-	(let ((link-text (gstest))
-	      (desc-text (nth 4 (org-heading-components))))
-	       ;(concat "[[file:contacts.org::" (nth 4 (org-heading-components)) "]]")))
-	  (unless (eq (current-buffer) temp-buffer) (switch-to-buffer temp-buffer))
-	  (goto-char temp-point)
-	  (insert (concat "[[" link-text "][" desc-text "]]")
-	  )
-	))
-    (user-error "This function is meant to be called within org")
-    ))
+    (defun bh/is-project-subtree-p ()
+      "Any task with a todo keyword that is in a project subtree.
+    Callers of this function already widen the buffer view."
+      (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
+                                  (point))))
+        (save-excursion
+          (bh/find-project-task)
+          (if (equal (point) task)
+              nil
+            t))))
 
-;; == clocking Functions ==
-(require 'org-clock)
+    ;; == Contacts ==
+    ;(require 'org-contacts)
 
-;; If not a project, clocking-in changes TODO to NEXT
-(setq org-clock-in-switch-to-state 'bh/clock-in-to-next)
-(defun bh/clock-in-to-next (kw)
-  "Switch a task from TODO to NEXT when clocking in.
-Skips capture tasks, projects, and subprojects.
-Switch projects and subprojects from NEXT back to TODO"
-  (when (not (and (boundp 'org-capture-mode) org-capture-mode))
-    (cond
-     ((and (member (org-get-todo-state) (list "TODO"))
-           (not (bh/is-project-p)))
-      "NEXT")
-     ((and (member (org-get-todo-state) (list "NEXT"))
-           (bh/is-project-p))
-      "TODO"))))
+    (defun gs-store-org-headline ()
+      (interactive)
+      (when (and (eq major-mode 'org-mode)
+                 (org-at-heading-p))
+        (org-store-link-props
+         :type "file"
+         :link (format "file:*%s" (nth 4 (org-heading-components)))
+         :description (nth 4 (org-heading-components)))))
 
-(add-hook 'org-mode-hook
-    (lambda ()
-      (define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)))
+    (defun gstest ()
+      (interactive)
+      ;; Just link to current headline
+      (setq cpltxt (concat "file:"
+                   (abbreviate-file-name
+                (buffer-file-name (buffer-base-buffer)))))
+      ;; Add a context search string
+      (when t
+        (let* ((element (org-element-at-point))
+           (name (org-element-property :name element)))
+          (setq txt (cond
+             ((org-at-heading-p) nil)
+             (name)
+             ((org-region-active-p)
+              (buffer-substring (region-beginning) (region-end)))))
+          (when (or (null txt) (string-match "\\S-" txt))
+        (setq cpltxt
+              (concat cpltxt "::"
+                  (condition-case nil
+                  (org-make-org-heading-search-string txt)
+                (error "")))
+              desc (or name
+                   (nth 4 (ignore-errors (org-heading-components)))
+                   "NONE")))))
+      (when (string-match "::\\'" cpltxt)
+        (setq cpltxt (substring cpltxt 0 -2)))
+      (setq link cpltxt)
+      link
+      )
 
-;; Also ensure that NEXT projects are switched to TODO when clocking in
-(add-hook 'org-clock-in-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+
+
+    (defun gs-helm-org-link-to-contact ()
+      (interactive)
+      (if (eq major-mode 'org-mode)
+          (let ((temp-point (point))
+            (temp-buffer (current-buffer))
+            (org-refile-targets (quote (("~/org/contacts.org" :level . 2))))
+           ;; (org-refile-targets (quote ((("~/org/contacts.org")) :maxlevel . 9)))
+            )
+        (org-refile '(4))
+        (let ((link-text (gstest))
+              (desc-text (nth 4 (org-heading-components))))
+               ;(concat "[[file:contacts.org::" (nth 4 (org-heading-components)) "]]")))
+          (unless (eq (current-buffer) temp-buffer) (switch-to-buffer temp-buffer))
+          (goto-char temp-point)
+          (insert (concat "[[" link-text "][" desc-text "]]")
+          )
+        ))
+        (user-error "This function is meant to be called within org")
+        ))
+
+    ;; == clocking Functions ==
+    (require 'org-clock)
+
+    ;; If not a project, clocking-in changes TODO to NEXT
+    (setq org-clock-in-switch-to-state 'bh/clock-in-to-next)
+    (defun bh/clock-in-to-next (kw)
+      "Switch a task from TODO to NEXT when clocking in.
+    Skips capture tasks, projects, and subprojects.
+    Switch projects and subprojects from NEXT back to TODO"
+      (when (not (and (boundp 'org-capture-mode) org-capture-mode))
+        (cond
+         ((and (member (org-get-todo-state) (list "TODO"))
+               (not (bh/is-project-p)))
+          "NEXT")
+         ((and (member (org-get-todo-state) (list "NEXT"))
+               (bh/is-project-p))
+          "TODO"))))
+
+    (add-hook 'org-mode-hook
+        (lambda ()
+          (define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)))
+
+    ;; Also ensure that NEXT projects are switched to TODO when clocking in
+    (add-hook 'org-clock-in-hook 'gs/mark-next-done-parent-tasks-todo 'append)
 #+END_SRC
 
 ** Agenda
@@ -2463,27 +2485,27 @@ da-bomb!
      (setq c-basic-offset 4)))
   )
 #+END_SRC
-** CSS
+
+** Nand 2 Tetris packages
+
 #+BEGIN_SRC emacs-lisp
-(use-package css-mode
-  :config (setq css-indent-offset 2)
-)
-#+END_SRC
-** Terraform
-pretty terraform highlighting
-#+BEGIN_SRC emacs-lisp
-;;(use-package terraform-mode
-;;    :defer t
-;;    :init
-;;     (progn
-;;       (require 'company-terraform)
-;;       (company-terraform-init)
-;;      )
-;;    :config (setq terraform-indent-level 2)
-;;    )
+  (use-package nand2tetris
+  :ensure t
+  :init
+  (require 'nand2tetris)
+  (setq nand2tetris-core-base-dir "~/Development/nand2tetris")
+  (add-to-list 'auto-mode-alist '("\\.hdl" . nand2tetris-mode))
+  )
 #+END_SRC
 
 #+RESULTS:
+: ((\.hld . nand2tetris-mode) (/Users/ericm/Downloads/nand2tetris.*\.hdl quote nand2tetris-mode) (\.\(yml\|yaml\|\config\|sls\)$ . yaml-mode) (\.\(json\)$ . json-mode) (\.js$ . js2-mode) (\.\(clj\|cljs\|edn\|boot\)$ . clojure-mode) (\.odc\' . archive-mode) (\.odf\' . archive-mode) (\.odi\' . archive-mode) (\.otp\' . archive-mode) (\.odp\' . archive-mode) (\.otg\' . archive-mode) (\.odg\' . archive-mode) (\.ots\' . archive-mode) (\.ods\' . archive-mode) (\.odm\' . archive-mode) (\.ott\' . archive-mode) (\.odt\' . archive-mode) (\.gpg\(~\|\.~[0-9]+~\)?\' nil epa-file) (/git/ignore\' . gitignore-mode) (/info/exclude\' . gitignore-mode) (/\.gitignore\' . gitignore-mode) (/etc/gitconfig\' . gitconfig-mode) (/\.gitmodules\' . gitconfig-mode) (/git/config\' . gitconfig-mode) (/modules/.*/config\' . gitconfig-mode) (/\.git/config\' . gitconfig-mode) (/\.gitconfig\' . gitconfig-mode) (/git/attributes\' . gitattributes-mode) (/info/attributes\' . gitattributes-mode) (/\.gitattributes\' . gitattributes-mode) (\(?:build\|profile\)\.boot\' . clojure-mode) (\.cljs\' . clojurescript-mode) (\.cljc\' . clojurec-mode) (\.\(clj\|dtm\|edn\)\' . clojure-mode) (\(?:\(?:\.\(?:b\(?:\(?:abel\|ower\)rc\)\|json\(?:ld\)?\)\|composer\.lock\)\'\) . json-mode) (/git-rebase-todo\' . git-rebase-mode) (\.\(plantuml\|pum\|plu\)\' . plantuml-mode) (\.\(e?ya?\|ra\)ml\' . yaml-mode) (\.elc\' . elisp-byte-code-mode) (\.zst\' nil jka-compr) (\.dz\' nil jka-compr) (\.xz\' nil jka-compr) (\.lzma\' nil jka-compr) (\.lz\' nil jka-compr) (\.g?z\' nil jka-compr) (\.bz2\' nil jka-compr) (\.Z\' nil jka-compr) (\.vr[hi]?\' . vera-mode) (\(?:\.\(?:rbw?\|ru\|rake\|thor\|jbuilder\|rabl\|gemspec\|podspec\)\|/\(?:Gem\|Rake\|Cap\|Thor\|Puppet\|Berks\|Vagrant\|Guard\|Pod\)file\)\' . ruby-mode) (\.re?st\' . rst-mode) (\.py[iw]?\' . python-mode) (\.m\' . octave-maybe-mode) (\.less\' . less-css-mode) (\.scss\' . scss-mode) (\.awk\' . awk-mode) (\.\(u?lpc\|pike\|pmod\(\.in\)?\)\' . pike-mode) (\.idl\' . idl-mode) (\.java\' . java-mode) (\.m\' . objc-mode) (\.ii\' . c++-mode) (\.i\' . c-mode) (\.lex\' . c-mode) (\.y\(acc\)?\' . c-mode) (\.h\' . c-or-c++-mode) (\.c\' . c-mode) (\.\(CC?\|HH?\)\' . c++-mode) (\.[ch]\(pp\|xx\|\+\+\)\' . c++-mode) (\.\(cc\|hh\)\' . c++-mode) (\.\(bat\|cmd\)\' . bat-mode) (\.[sx]?html?\(\.[a-zA-Z_]+\)?\' . mhtml-mode) (\.svgz?\' . image-mode) (\.svgz?\' . xml-mode) (\.x[bp]m\' . image-mode) (\.x[bp]m\' . c-mode) (\.p[bpgn]m\' . image-mode) (\.tiff?\' . image-mode) (\.gif\' . image-mode) (\.png\' . image-mode) (\.jpe?g\' . image-mode) (\.te?xt\' . text-mode) (\.[tT]e[xX]\' . tex-mode) (\.ins\' . tex-mode) (\.ltx\' . latex-mode) (\.dtx\' . doctex-mode) (\.org\' . org-mode) (\.el\' . emacs-lisp-mode) (Project\.ede\' . emacs-lisp-mode) (\.\(scm\|stk\|ss\|sch\)\' . scheme-mode) (\.l\' . lisp-mode) (\.li?sp\' . lisp-mode) (\.[fF]\' . fortran-mode) (\.for\' . fortran-mode) (\.p\' . pascal-mode) (\.pas\' . pascal-mode) (\.\(dpr\|DPR\)\' . delphi-mode) (\.ad[abs]\' . ada-mode) (\.ad[bs]\.dg\' . ada-mode) (\.\([pP]\([Llm]\|erl\|od\)\|al\)\' . perl-mode) (Imakefile\' . makefile-imake-mode) (Makeppfile\(?:\.mk\)?\' . makefile-makepp-mode) (\.makepp\' . makefile-makepp-mode) (\.mk\' . makefile-bsdmake-mode) (\.make\' . makefile-bsdmake-mode) (GNUmakefile\' . makefile-gmake-mode) ([Mm]akefile\' . makefile-bsdmake-mode) (\.am\' . makefile-automake-mode) (\.texinfo\' . texinfo-mode) (\.te?xi\' . texinfo-mode) (\.[sS]\' . asm-mode) (\.asm\' . asm-mode) (\.css\' . css-mode) (\.mixal\' . mixal-mode) (\.gcov\' . compilation-mode) (/\.[a-z0-9-]*gdbinit . gdb-script-mode) (-gdb\.gdb . gdb-script-mode) ([cC]hange\.?[lL]og?\' . change-log-mode) ([cC]hange[lL]og[-.][0-9]+\' . change-log-mode) (\$CHANGE_LOG\$\.TXT . change-log-mode) (\.scm\.[0-9]*\' . scheme-mode) (\.[ckz]?sh\'\|\.shar\'\|/\.z?profile\' . sh-mode) (\.bash\' . sh-mode) (\(/\|\`\)\.\(bash_\(profile\|history\|log\(in\|out\)\)\|z?log\(in\|out\)\)\' . sh-mode) (\(/\|\`\)\.\(shrc\|zshrc\|m?kshrc\|bashrc\|t?cshrc\|esrc\)\' . sh-mode) (\(/\|\`\)\.\([kz]shenv\|xinitrc\|startxrc\|xsession\)\' . sh-mode) (\.m?spec\' . sh-mode) (\.m[mes]\' . nroff-mode) (\.man\' . nroff-mode) (\.sty\' . latex-mode) (\.cl[so]\' . latex-mode) (\.bbl\' . latex-mode) (\.bib\' . bibtex-mode) (\.bst\' . bibtex-style-mode) (\.sql\' . sql-mode) (\(acinclude\|aclocal\|acsite\)\.m4\' . autoconf-mode) (\.m[4c]\' . m4-mode) (\.mf\' . metafont-mode) (\.mp\' . metapost-mode) (\.vhdl?\' . vhdl-mode) (\.article\' . text-mode) (\.letter\' . text-mode) (\.i?tcl\' . tcl-mode) (\.exp\' . tcl-mode) (\.itk\' . tcl-mode) (\.icn\' . icon-mode) (\.sim\' . simula-mode) (\.mss\' . scribe-mode) (\.f9[05]\' . f90-mode) (\.f0[38]\' . f90-mode) (\.indent\.pro\' . fundamental-mode) (\.\(pro\|PRO\)\' . idlwave-mode) (\.srt\' . srecode-template-mode) (\.prolog\' . prolog-mode) (\.tar\' . tar-mode) (\.\(arc\|zip\|lzh\|lha\|zoo\|[jew]ar\|xpi\|rar\|cbr\|7z\|ARC\|ZIP\|LZH\|LHA\|ZOO\|[JEW]AR\|XPI\|RAR\|CBR\|7Z\)\' . archive-mode) (\.oxt\' . archive-mode) (\.\(deb\|[oi]pk\)\' . archive-mode) (\`/tmp/Re . text-mode) (/Message[0-9]*\' . text-mode) (\`/tmp/fol/ . text-mode) (\.oak\' . scheme-mode) (\.sgml?\' . sgml-mode) (\.x[ms]l\' . xml-mode) (\.dbk\' . xml-mode) (\.dtd\' . sgml-mode) (\.ds\(ss\)?l\' . dsssl-mode) (\.js[mx]?\' . javascript-mode) (\.har\' . javascript-mode) (\.json\' . javascript-mode) (\.[ds]?va?h?\' . verilog-mode) (\.by\' . bovine-grammar-mode) (\.wy\' . wisent-grammar-mode) ([:/\]\..*\(emacs\|gnus\|viper\)\' . emacs-lisp-mode) (\`\..*emacs\' . emacs-lisp-mode) ([:/]_emacs\' . emacs-lisp-mode) (/crontab\.X*[0-9]+\' . shell-script-mode) (\.ml\' . lisp-mode) (\.ld[si]?\' . ld-script-mode) (ld\.?script\' . ld-script-mode) (\.xs\' . c-mode) (\.x[abdsru]?[cnw]?\' . ld-script-mode) (\.zone\' . dns-mode) (\.soa\' . dns-mode) (\.asd\' . lisp-mode) (\.\(asn\|mib\|smi\)\' . snmp-mode) (\.\(as\|mi\|sm\)2\' . snmpv2-mode) (\.\(diffs?\|patch\|rej\)\' . diff-mode) (\.\(dif\|pat\)\' . diff-mode) (\.[eE]?[pP][sS]\' . ps-mode) (\.\(?:PDF\|DVI\|OD[FGPST]\|DOCX\|XLSX?\|PPTX?\|pdf\|djvu\|dvi\|od[fgpst]\|docx\|xlsx?\|pptx?\)\' . doc-view-mode-maybe) (configure\.\(ac\|in\)\' . autoconf-mode) (\.s\(v\|iv\|ieve\)\' . sieve-mode) (BROWSE\' . ebrowse-tree-mode) (\.ebrowse\' . ebrowse-tree-mode) (#\*mail\* . mail-mode) (\.g\' . antlr-mode) (\.mod\' . m2-mode) (\.ses\' . ses-mode) (\.docbook\' . sgml-mode) (\.com\' . dcl-mode) (/config\.\(?:bat\|log\)\' . fundamental-mode) (/\.\(authinfo\|netrc\)\' . authinfo-mode) (\.\(?:[iI][nN][iI]\|[lL][sS][tT]\|[rR][eE][gG]\|[sS][yY][sS]\)\' . conf-mode) (\.la\' . conf-unix-mode) (\.ppd\' . conf-ppd-mode) (java.+\.conf\' . conf-javaprop-mode) (\.properties\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-javaprop-mode) (\.toml\' . conf-toml-mode) (\.desktop\' . conf-desktop-mode) (/\.redshift\.conf\' . conf-windows-mode) (\`/etc/\(?:DIR_COLORS\|ethers\|.?fstab\|.*hosts\|lesskey\|login\.?de\(?:fs\|vperm\)\|magic\|mtab\|pam\.d/.*\|permissions\(?:\.d/.+\)?\|protocols\|rpc\|services\)\' . conf-space-mode) (\`/etc/\(?:acpid?/.+\|aliases\(?:\.d/.+\)?\|default/.+\|group-?\|hosts\..+\|inittab\|ksysguarddrc\|opera6rc\|passwd-?\|shadow-?\|sysconfig/.+\)\' . conf-mode) ([cC]hange[lL]og[-.][-0-9a-z]+\' . change-log-mode) (/\.?\(?:gitconfig\|gnokiirc\|hgrc\|kde.*rc\|mime\.types\|wgetrc\)\' . conf-mode) (/\.\(?:asound\|enigma\|fetchmail\|gltron\|gtk\|hxplayer\|mairix\|mbsync\|msmtp\|net\|neverball\|nvidia-settings-\|offlineimap\|qt/.+\|realplayer\|reportbug\|rtorrent\.\|screen\|scummvm\|sversion\|sylpheed/.+\|xmp\)rc\' . conf-mode) (/\.\(?:gdbtkinit\|grip\|mpdconf\|notmuch-config\|orbital/.+txt\|rhosts\|tuxracer/options\)\' . conf-mode) (/\.?X\(?:default\|resource\|re\)s\> . conf-xdefaults-mode) (/X11.+app-defaults/\|\.ad\' . conf-xdefaults-mode) (/X11.+locale/.+/Compose\' . conf-colon-mode) (/X11.+locale/compose\.dir\' . conf-javaprop-mode) (\.~?[0-9]+\.[0-9][-.0-9]*~?\' nil t) (\.\(?:orig\|in\|[bB][aA][kK]\)\' nil t) ([/.]c\(?:on\)?f\(?:i?g\)?\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-mode-maybe) (\.[1-9]\' . nroff-mode) (\.art\' . image-mode) (\.avs\' . image-mode) (\.bmp\' . image-mode) (\.cmyk\' . image-mode) (\.cmyka\' . image-mode) (\.crw\' . image-mode) (\.dcr\' . image-mode) (\.dcx\' . image-mode) (\.dng\' . image-mode) (\.dpx\' . image-mode) (\.fax\' . image-mode) (\.hrz\' . image-mode) (\.icb\' . image-mode) (\.icc\' . image-mode) (\.icm\' . image-mode) (\.ico\' . image-mode) (\.icon\' . image-mode) (\.jbg\' . image-mode) (\.jbig\' . image-mode) (\.jng\' . image-mode) (\.jnx\' . image-mode) (\.miff\' . image-mode) (\.mng\' . image-mode) (\.mvg\' . image-mode) (\.otb\' . image-mode) (\.p7\' . image-mode) (\.pcx\' . image-mode) (\.pdb\' . image-mode) (\.pfa\' . image-mode) (\.pfb\' . image-mode) (\.picon\' . image-mode) (\.pict\' . image-mode) (\.rgb\' . image-mode) (\.rgba\' . image-mode) (\.tga\' . image-mode) (\.wbmp\' . image-mode) (\.webp\' . image-mode) (\.wmf\' . image-mode) (\.wpg\' . image-mode) (\.xcf\' . image-mode) (\.xmp\' . image-mode) (\.xwd\' . image-mode) (\.yuv\' . image-mode) (\.tgz\' . tar-mode) (\.tbz2?\' . tar-mode) (\.txz\' . tar-mode) (\.tzst\' . tar-mode))
+
+* Emacs Server
+
+#+BEGIN_SRC emacs-lisp
+(server-start)
+#+END_SRC
 
 * Post Initialisation
 Let's lower our GC thresholds back down to a sane level.
