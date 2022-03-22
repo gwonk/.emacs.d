@@ -2487,7 +2487,8 @@ da-bomb!
     :ensure t
     :init
     (global-flycheck-mode)
-    (setq flycheck-clang-language-standard "c++11")
+    (add-hook 'c++-mode-hook
+              (lambda () (setq flycheck-clang-language-standard "c++17")))
     :delight ""
   )
 #+END_SRC
