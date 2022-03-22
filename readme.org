@@ -2001,14 +2001,16 @@ show this warning instead."
 
 ** Reveal.js
 #+BEGIN_SRC emacs-lisp
-(require 'org-re-reveal)
+    (use-package org-re-reveal
+      :ensure t
+      :after org)
 
-(use-package oer-reveal
-    :after org
-    :ensure t)
+    (use-package oer-reveal
+        :after org
+        :ensure t)
 
-(setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-(setq org-re-reveal-revealjs-version "4")
+    (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+    (setq org-re-reveal-revealjs-version "4")
 #+END_SRC
 
    #+RESULTS:
@@ -2477,13 +2479,12 @@ da-bomb!
 #+END_SRC
 ** C
 #+BEGIN_SRC emacs-lisp
-  (use-package cc-mode
-   :config
-   (progn
-     (add-hook 'c-mode-hook (lambda () (c-set-style "stroustrup"))
-     (setq-default indent-tabs-mode nil)
-     (setq c-basic-offset 4)))
-  )
+    (use-package cc-mode
+  :init
+       (add-hook 'cc-mode-hook (lambda () (c-set-style "stroustrup")))
+    )
+       (setq-default indent-tabs-mode nil)
+       (setq c-basic-offset 4)
 #+END_SRC
 
 ** Nand 2 Tetris packages
