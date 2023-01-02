@@ -68,7 +68,10 @@
     - [[#skewer][Skewer]]
     - [[#json-mode][JSON mode]]
   - [[#yaml][YAML]]
+  - [[#lsp-mode][LSP mode]]
   - [[#cc][C/C++]]
+  - [[#c-debugging][C++ debugging]]
+  - [[#flycheck][Flycheck]]
   - [[#nand-2-tetris-packages][Nand 2 Tetris packages]]
 - [[#emacs-server][Emacs Server]]
 - [[#post-initialisation][Post Initialisation]]
@@ -1815,7 +1818,7 @@ show this warning instead."
 (use-package plantuml-mode
 :ensure t
 :init
-     (setq org-plantuml-jar-path "/usr/local/Cellar/plantuml/1.2022.0/libexec/plantuml.jar")
+     (setq org-plantuml-jar-path "/usr/local/Cellar/plantuml/1.2022.4/libexec/plantuml.jar")
 )
 
   ;; Syntax hilight in #+begin_src blocks
@@ -1996,16 +1999,16 @@ show this warning instead."
 
 ** Reveal.js
 #+BEGIN_SRC emacs-lisp
-    (use-package org-re-reveal
-      :ensure t
-      :after org)
+  (use-package org-re-reveal
+    :ensure t
+    :after org)
 
-    (use-package oer-reveal
-        :after org
-        :ensure t)
+  ;; (use-package oer-reveal
+  ;;     :after org
+  ;;     :ensure t)
 
-    (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-    (setq org-re-reveal-revealjs-version "4")
+  (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+  (setq org-re-reveal-revealjs-version "4")
 #+END_SRC
 
    #+RESULTS:
@@ -2472,6 +2475,33 @@ da-bomb!
   :defer t)
 
 #+END_SRC
+
+** LSP mode
+#+BEGIN_SRC emacs-lisp
+  (use-package lsp-mode
+    :ensure t
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+           (cc-mode . lsp-deferred))
+           ;; if you want which-key integration
+           ;(lsp-mode . lsp-enable-which-key-integration))
+    :commands (lsp lsp-deferred))
+
+;  (setq lsp-clients-clangd-executable "/usr/local/opt/llvm/bin/clangd")
+;  (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=info" "-pretty" "-resource-dir=/Applications/Xcode9.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0"))
+
+  ;; optionally
+  (use-package lsp-ui :commands lsp-ui-mode)
+  (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+
+  ;; optionally if you want to use debugger
+  ;(use-package dap-mode)
+  ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+      (setq dap-lldb-debug-program `(,(expand-file-name "~/.vscode/extensions/lanza.lldb-vscode-0.2.3/bin/darwin/bin/lldb-vscode")))
+#+END_SRC
+
 ** C/C++
 #+BEGIN_SRC emacs-lisp
     (use-package cc-mode
@@ -2481,6 +2511,49 @@ da-bomb!
        (setq-default indent-tabs-mode nil)
        (setq c-basic-offset 4)
 #+END_SRC
+
+** C++ debugging
+
+#+BEGIN_SRC emacs-lisp :tangle no
+    (use-package dap-mode
+      :defer
+      :custom
+      (dap-auto-configure-mode t                           "Automatically configure dap.")
+      (dap-auto-configure-features
+       '(sessions locals breakpoints expressions tooltip)  "Remove the button panel in the top.")
+      :config
+      ;;; dap for c++
+      (require 'dap-lldb)
+
+        ;;; set the debugger executable (c++)
+      (setq dap-lldb-debug-program `(,(expand-file-name "~/.vscode/extensions/lanza.lldb-vscode-0.2.3/bin/darwin/bin/lldb-vscode")))
+
+        ;;; ask user for executable to debug if not specified explicitly (c++)
+;      (setq dap-lldb-debugged-program-function (lambda () (read-file-name "Select file to debug.")))
+
+        ;;; default debug template for (c++)
+        (dap-register-debug-template
+         "C++ LLDB dap"
+         (list :type "lldb-vscode"
+               :cwd nil
+               :args nil
+               :request "launch"
+               :program nil))
+
+        (defun dap-debug-create-or-edit-json-template ()
+          "Edit the C++ debugging configuration or create + edit if none exists yet."
+          (interactive)
+          (let ((filename (concat (lsp-workspace-root) "/launch.json"))
+            (default "~/.emacs.d/default-launch.json"))
+            (unless (file-exists-p filename)
+          (copy-file default filename))
+            (find-file-existing filename))))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+** Flycheck
 
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
