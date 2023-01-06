@@ -1,0 +1,2450 @@
+Some default settings aka sanity defaults
+#+BEGIN_SRC emacs-lisp
+;;; Code:
+;; menu shit remove
+(mapc
+ (lambda (mode)
+   (when (fboundp mode)
+     (funcall mode -1)))
+ '(menu-bar-mode tool-bar-mode scroll-bar-mode))
+
+;;; Initialisation
+(setq inhibit-default-init t
+inhibit-startup-echo-area-message t
+inhibit-startup-screen t
+initial-scratch-message nil)
+
+;; warn when opening files bigger than 100MB
+(setq large-file-warning-threshold 100000000)
+
+(defconst ejm-savefile-dir (expand-file-name "savefile" user-emacs-directory))
+
+;; create the savefile dir if it doesn't exist
+(unless (file-exists-p ejm-savefile-dir)
+  (make-directory ejm-savefile-dir))
+
+;;; UI
+;; the blinking cursor is nothing, but an annoyance
+(blink-cursor-mode -1)
+
+;; disable the annoying bell ring
+(setq ring-bell-function 'ignore)
+
+;; disable startup screen
+(setq inhibit-startup-screen t)
+
+;; nice scrolling
+(setq scroll-margin 0
+scroll-conservatively 100000
+scroll-preserve-screen-position 1)
+
+;; mode line settings
+(line-number-mode t)
+(column-number-mode t)
+(size-indication-mode t)
+
+;; enable y/n answers
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; more useful frame title, that show either a file or a
+;; buffer name (if the buffer isn't visiting a file)
+(setq frame-title-format
+'((:eval (if (buffer-file-name)
+	     (abbreviate-file-name (buffer-file-name))
+	   "%b"))))
+
+;; Productive default mode
+(setq initial-major-mode 'org-mode)
+
+;; When on a tab, make the cursor the tab length.
+(setq-default x-stretch-cursor t)
+
+;; Keep emacs Custom-settings in separate file.
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file)
+(load custom-file))
+
+;; store all backup and autosave files in the tmp dir
+(setq backup-directory-alist
+`((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+`((".*" ,temporary-file-directory t)))
+
+;; revert buffers automatically when underlying files are changed externally
+(global-auto-revert-mode t)
+
+;; Make backups of files, even when they're in version control.
+(setq vc-make-backup-files t)
+
+;; Fix empty pasteboard error.
+(setq save-interprogram-paste-before-kill nil)
+
+
+#+END_SRC
+*** Package Management
+
+**** Package Settings
+We're going to set the =load-path= ourselves and avoid calling =(package-initilize)= (for
+performance reasons) so we need to set =package--init-file-ensured= to true to tell =package.el=
+to not automatically call it on our behalf. Additionally we're setting
+=package-enable-at-startup= to nil so that packages will not automatically be loaded for us since
+=use-package= will be handling that.
+
+#+BEGIN_SRC emacs-lisp
+  (eval-and-compile
+    (setq load-prefer-newer t
+          package-user-dir "~/.emacs.d/elpa"
+          package--init-file-ensured t
+          package-enable-at-startup nil)
+
+    (unless (file-directory-p package-user-dir)
+      (make-directory package-user-dir t)))
+#+END_SRC
+
+**** Use-Package Settings
+Tell =use-package= to always defer loading packages unless explicitly told otherwise. This speeds up
+initialization significantly as many packages are only loaded later when they are explicitly used.
+
+#+BEGIN_SRC emacs-lisp
+  (setq use-package-always-defer t
+        use-package-verbose t)
+#+END_SRC
+
+**** Manually Set Load Path
+We're going to set the load path ourselves so that we don't have to call =package-initialize= at
+runtime and incur a large performance hit. This load-path will actually be faster than the one
+created by =package-initialize= because it appends the elpa packages to the end of the load path.
+Otherwise any time a builtin package was required it would have to search all of third party paths
+first.
+
+#+BEGIN_SRC emacs-lisp
+  (eval-and-compile
+    (setq load-path (append load-path (directory-files package-user-dir t "^[^.]" t))))
+#+END_SRC
+
+**** Initialise Package Management
+Next we are going to require =package.el= and add our additional package archives, 'melpa' and 'org'.
+Afterwards we need to initialize our packages and then ensure that =use-package= is installed, which
+we promptly install if it's missing. Finally we load =use-package= and tell it to always install any
+missing packages.
+
+Note that this entire block is wrapped in =eval-when-compile=. The effect of this is to perform all
+of the package initialization during compilation so that when byte compiled, all of this time consuming
+code is skipped. This can be done because the result of byte compiling =use-package= statements results
+in the macro being fully expanded at which point =use-package= isn't actually required any longer.
+
+Since the code is automatically compiled during runtime, if the configuration hasn't already been
+previously compiled manually then all of the package initialization will still take place at startup.
+
+#+BEGIN_SRC emacs-lisp
+  (eval-when-compile
+    (require 'package)
+
+    (unless (assoc-default "melpa" package-archives)
+      (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
+    (unless (assoc-default "nongnu" package-archives)
+      (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/") t))
+    ;(unless (assoc-default "elpa" package-archives)
+    ;  (add-to-list 'package-archives '("elpa" . "http://elpa.gnu.org/packages/") t))
+    ;(unless (assoc-default "org" package-archives)
+    ;  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
+
+    (package-initialize)
+    (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
+      (package-install 'use-package))
+    (unless (package-installed-p 'bind-key)
+      (package-refresh-contents)
+      (package-install 'bind-key))
+    (require 'use-package)
+    (require 'bind-key)
+    (setq use-package-always-ensure t))
+#+END_SRC
+
+
+* Packages
+
+** Display
+
+#+BEGIN_SRC emacs-lisp
+  (use-package solarized-theme
+       :ensure t
+       :init
+         (setq solarized-use-variable-pitch nil
+                 solarized-scale-org-headlines nil)
+        (load-theme 'solarized-light t))
+#+END_SRC
+
+old Use material theme
+
+#+BEGIN_SRC emacs-lisp
+(use-package time
+  :config
+  (setq display-time-24hr-format t
+        display-time-default-load-average nil)
+  (display-time-mode)
+)
+
+(use-package windmove
+  :config
+  ;; use shift + arrow keys to switch between visible buffers
+  (windmove-default-keybindings))
+
+;; diminish mode symbols
+(use-package diminish
+  :ensure t
+)
+;; delight minor and major modes
+(use-package delight
+  :ensure t
+)
+#+END_SRC
+highlights
+
+#+BEGIN_SRC emacs-lisp
+;; highlight the current line
+(global-hl-line-mode +1)
+
+(use-package diff-hl
+  :ensure t
+  :config
+  (global-diff-hl-mode +1)
+  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
+#+END_SRC
+** LineNumbers
+#+BEGIN_SRC emacs-lisp
+(setq linum-format "%4d")
+
+(defun my-linum-mode-hook ()
+     (linum-mode t))
+
+(add-hook 'find-file-hook 'my-linum-mode-hook)
+#+END_SRC
+** Timestamps
+#+BEGIN_SRC emacs-lisp
+(defun format-date (format)
+  (let ((system-time-locale "en_NZ.UTF-8"))
+    (insert (format-time-string format))))
+
+(defun insert-date ()
+  (interactive)
+  (format-date "%A, %B %d %Y"))
+
+(defun insert-date-and-time ()
+  (interactive)
+  (format-date "%Y-%m-%d %H:%M:%S"))
+#+END_SRC
+
+** Fonts
+  There is a new wonderful coding font that I discovered recently called the Input (Font for Code).
+  This is a really neat font that works particularly well. You just have to go to their site,
+  define the characteristics you want for it, download and install it locally.
+  #+BEGIN_SRC emacs-lisp
+  ;;Use the Input Sans font size 12
+  (set-frame-font "Input Mono Narrow-14")
+  #+END_SRC
+
+  And the best coloured highlighting of selected text needs to be both
+  bright, but not obscure the white text in the foreground (see
+  =list-colors-display=). Favorites so far are =purple4= and =DarkOrange3=:
+
+  #+BEGIN_SRC emacs-lisp
+    (set-face-background 'region "DarkOrange3")
+  #+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package dynamic-fonts
+  :disabled t
+  :ensure t
+  :config
+  (progn
+    (setq dynamic-fonts-preferred-monospace-point-size 10
+          dynamic-fonts-preferred-monospace-fonts
+          (-union '("Source Code Pro") dynamic-fonts-preferred-monospace-fonts))
+    (dynamic-fonts-setup)))
+#+END_SRC
+** Whitespace
+#+BEGIN_SRC emacs-lisp
+;; Emacs modes typically provide a standard means to change the
+;; indentation width -- eg. c-basic-offset: use that to adjust your
+;; personal indentation width, while maintaining the style (and
+;; meaning) of any files you load.
+(setq-default indent-tabs-mode nil)   ;; don't use tabs to indent
+(setq-default tab-width 4)            ;; but maintain correct appearance
+
+;; Newline at end of file
+(setq require-final-newline t)
+
+;; delete the selection with a keypress
+(delete-selection-mode t)
+
+(use-package whitespace
+  :bind ("C-c T w" . whitespace-mode)
+  :delight " 🗒️"
+  :init
+   (setq whitespace-line-column nil
+          whitespace-display-mappings '((space-mark 32 [183] [46])
+                                           (newline-mark 10 [9166 10])
+                                           (tab-mark 9 [9654 9] [92 9])))
+  ;(dolist (hook '(prog-mode-hook text-mode-hook))
+  ;  (add-hook hook #'whitespace-mode))
+  (add-hook 'before-save-hook #'whitespace-cleanup)
+  :config
+  (setq whitespace-line-column 80) ;; limit line length
+  (setq whitespace-style '(face tabs empty trailing lines-tail))
+  (set-face-attribute 'whitespace-space       nil :foreground "#666666" :background nil)
+  (set-face-attribute 'whitespace-newline     nil :foreground "#666666" :background nil)
+  (set-face-attribute 'whitespace-indentation nil :foreground "#666666" :background nil)
+)
+#+END_SRC
+** General (Keyboard Binding)
+#+BEGIN_SRC emacs-lisp
+  (use-package general
+    :ensure t
+  :after evil
+    :init
+      (general-evil-setup t))
+(defvar gjs-leader-key "<SPC>")
+#+END_SRC
+
+** Wordsmithing
+ options for dealing with text and words
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+
+  ;; hippie expand is dabbrev expand on steroids
+  (setq hippie-expand-try-functions-list '(try-expand-dabbrev
+                                           try-expand-dabbrev-all-buffers
+                                           try-expand-dabbrev-from-kill
+                                           try-complete-file-name-partially
+                                           try-complete-file-name
+                                           try-expand-all-abbrevs
+                                           try-expand-list
+                                           try-expand-line
+                                           try-complete-lisp-symbol-partially
+                                           try-complete-lisp-symbol))
+
+  ;; use hippie-expand instead of dabbrev
+  (global-set-key (kbd "M-/") #'hippie-expand)
+  (global-set-key (kbd "s-/") #'hippie-expand)
+
+    ;; abbrev mode setup
+  (use-package abbrev
+    :ensure nil
+    :diminish abbrev-mode
+    :config
+    (if (file-exists-p abbrev-file-name)
+        (quietly-read-abbrev-file)))
+
+  (use-package flyspell
+    :config
+      (when (eq system-type 'windows-nt)
+        (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
+      (setq ispell-program-name "aspell" ; use aspell instead of ispell
+           ispell-extra-args '("--sug-mode=ultra"))
+      (add-hook 'text-mode-hook #'flyspell-mode)
+      (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+    :delight "")
+
+
+#+END_SRC
+*** Red Warnings
+
+Various keywords (in comments) are now flagged in a Red Error font:
+
+   #+BEGIN_SRC emacs-lisp
+     (add-hook 'prog-common-hook
+        (lambda ()
+        (font-lock-add-keywords nil
+        '(("\\<\\(FIX\\|FIXME\\|TODO\\|BUG\\|HACK\\):"
+               1 font-lock-warning-face t)))))
+   #+END_SRC
+
+** Fill Mode
+
+  Automatically wrapping when you get to the end of a line (or the
+  fill-region):
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package emacs
+      :bind (("C-c T f" . auto-fill-mode)
+             ("C-c T t" . toggle-truncate-lines))
+      :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
+      :diminish auto-fill-mode)
+  #+END_SRC
+
+** Global keys
+company mode TAB
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+#+END_SRC
+** Which-key
+  Many command sequences may be logical, but who can remember them
+  all? While I used to use [[https://github.com/kai2nenobu/guide-key][guide-key]] to display the final function
+  name, it isn't as nice as [[https://github.com/justbur/emacs-which-key][which-key]].
+
+     #+name: global-keys
+  #+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :config
+  (which-key-mode +1))
+   #+END_SRC
+
+** Files
+
+Use dired Plus dired-x
+#+BEGIN_SRC emacs-lisp
+(use-package dired
+  :ensure nil
+;  :defer t
+  :config
+  ;; dired - reuse current buffer by pressing 'a'
+  (progn
+    (put 'dired-find-alternate-file 'disabled nil)
+
+    ;; always delete and copy recursively
+    (setq dired-recursive-deletes 'always)
+    (setq dired-recursive-copies 'always)
+
+    ;; if there is a dired buffer displayed in the next window, use its
+    ;; current subdir, instead of the current subdir of this dired buffer
+    (setq dired-dwim-target t)
+
+    ;; enable some really cool extensions like C-x C-j(dired-jump)
+    (require 'dired-x)
+   )
+  )
+
+;; revert buffers automatically when underlying files are changed externally
+(global-auto-revert-mode t)
+
+;;; Completion, snippets
+
+(use-package company
+  :diminish company-mode
+  :ensure t
+  :defer t
+  :init
+  (progn
+    (global-company-mode)
+    (bind-key "M-TAB" 'company-select-next company-active-map)
+    (setq company-tooltip-align-annotations t
+          company-dabbrev-downcase nil
+          company-dabbrev-code-everywhere t
+          company-dabbrev-ignore-case nil))
+   )
+
+
+#+END_SRC
+save place and recent files
+#+BEGIN_SRC emacs-lisp
+;; Save point position between sessions.
+(use-package saveplace
+   :ensure nil  ;; as not loading packages
+   :config
+   (setq save-place-file (expand-file-name "saveplace" ejm-savefile-dir))
+   ;; activate if for all buffers
+   (setq-default save-place t)
+ )
+
+(use-package savehist
+  :config
+  (setq savehist-additional-variables
+        ;; search entries
+        '(search-ring regexp-search-ring)
+        ;; save every minute
+        savehist-autosave-interval 60
+        ;; keep the home clean
+        savehist-file (expand-file-name "savehist" ejm-savefile-dir))
+  (savehist-mode +1)
+ )
+
+(use-package recentf
+  :config
+  (setq recentf-save-file (expand-file-name "recentf" ejm-savefile-dir)
+        recentf-max-saved-items 500
+        recentf-max-menu-items 15
+        ;; disable recentf-cleanup on Emacs start, because it can cause
+        ;; problems with remote files aka tramp
+        recentf-auto-cleanup 'never)
+  (recentf-mode +1)
+ )
+
+;; Looks like a big mess, but it works.
+(defun recentf-ido-find-file ()
+  "Find a recent file using ido."
+  (interactive)
+  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+    (when file
+      (find-file file))))
+
+  (bind-key "C-x f" 'recentf-ido-find-file )
+
+#+END_SRC
+
+** Git
+
+   I like [[https://github.com/syohex/emacs-git-gutter-fringe][git-gutter-fringe]]:
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package git-gutter-fringe
+        :ensure t
+        :diminish git-gutter-mode
+        :init (setq git-gutter-fr:side 'right-fringe)
+        :config (global-git-gutter-mode t))
+   #+END_SRC
+
+   I want to have special mode for Git's =configuration= file:
+
+   #+BEGIN_SRC emacs-lisp
+      (use-package git-modes
+       :ensure t)
+
+;     (use-package gitconfig-mode
+;       :ensure t)
+
+;     (use-package gitignore-mode
+;       :ensure t)
+   #+END_SRC
+
+   What about being able to see the [[https://github.com/voins/mo-git-blame][Git blame]] in a buffer?
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package mo-git-blame
+        :ensure t)
+   #+END_SRC
+
+   Run =mo-git-blame-current= to see the goodies.
+
+** Magit
+
+  Git is [[http://emacswiki.org/emacs/Git][already part of Emacs]]. However, [[http://philjackson.github.com/magit/magit.html][Magit]] is sweet.
+  Don't believe me? Check out [[https://www.youtube.com/watch?v=vQO7F2Q9DwA][this video]].
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package magit
+      :ensure t
+      :commands magit-status magit-blame magit-section
+      :init
+      (defadvice magit-status (around magit-fullscreen activate)
+        (window-configuration-to-register :magit-fullscreen)
+        ad-do-it
+        (delete-other-windows))
+      :config
+      (setq magit-branch-arguments nil
+            ;; use ido to look for branches
+            magit-completing-read-function 'magit-ido-completing-read
+            ;; don't put "origin-" in front of new branch names by default
+            magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
+            magit-push-always-verify nil
+            ;; Get rid of the previous advice to go into fullscreen
+            magit-restore-window-configuration t)
+
+      :bind ("C-x g" . magit-status))
+  #+END_SRC
+
+  I like having Magit to run in a /full screen/ mode, and add the
+  above =defadvice= idea from [[https://github.com/magnars/.emacs.d/blob/master/setup-magit.el][Sven Magnars]].
+
+  *Note:* Use the [[https://github.com/jwiegley/emacs-release/blob/master/lisp/vc/smerge-mode.el][smerge-mode]] that is now part of Emacs.
+
+
+** Projectile
+Projectile is a quick and easy project management package that "just works". We're
+going to install it and make sure it's loaded immediately.
+
+#+BEGIN_SRC emacs-lisp
+            (use-package projectile
+            :ensure t
+          :init
+        (projectile-mode +1)
+      :bind (:map projectile-mode-map
+    ("s-p" . projectile-command-map)
+  ("C-c p" . projectile-command-map)))
+              ;; (use-package projectile
+              ;;   :ensure projectile
+              ;;   :config
+              ;;       (progn (setq projectile-enable-caching t)
+              ;;                       (setq projectile-require-project-root nil)
+              ;;                       (setq projectile-completion-system 'default)
+              ;;                       (add-to-list 'projectile-globally-ignored-files ".DS_Store")
+              ;;                     )
+              ;;                     :defer (projectile-cleanup-known-projects)
+              ;;                     :delight '(:eval (concat "𝓟/" (projectile-project-name)))
+              ;;                   )
+#+END_SRC
+
+* Completion Frameworks
+
+** Vertico
+
+#+BEGIN_SRC emacs-lisp
+;; Enable vertico
+(use-package vertico
+  :init
+  (vertico-mode)
+
+  ;; Different scroll margin
+  ;; (setq vertico-scroll-margin 0)
+
+  ;; Show more candidates
+  ;; (setq vertico-count 20)
+
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (setq vertico-resize t)
+
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  ;; (setq vertico-cycle t)
+  )
+
+;; Optionally use the `orderless' completion style. See
+;; `+orderless-dispatch' in the Consult wiki for an advanced Orderless style
+;; dispatcher. Additionally enable `partial-completion' for file path
+;; expansion. `partial-completion' is important for wildcard support.
+;; Multiple files can be opened at once with `find-file' if you enter a
+;; wildcard. You may also give the `initials' completion style a try.
+(use-package orderless
+  :init
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+
+;; Persist history over Emacs restarts. Vertico sorts by history position.
+(use-package savehist
+  :init
+  (savehist-mode))
+
+;; A few more useful configurations...
+(use-package emacs
+  :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; Alternatively try `consult-completing-read-multiple'.
+  (defun crm-indicator (args)
+    (cons (concat "[CRM] " (car args)) (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+  ;; Vertico commands are hidden in normal buffers.
+  ;; (setq read-extended-command-predicate
+  ;;       #'command-completion-default-include-p)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t))
+
+#+END_SRC
+
+** Marginalia
+
+#+BEGIN_SRC emacs-lisp
+;; Enable richer annotations using the Marginalia package
+(use-package marginalia
+  ;; Either bind `marginalia-cycle` globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+
+#+END_SRC
+
+** Consult
+
+#+BEGIN_SRC emacs-lisp
+  ;; Example configuration for Consult
+  (use-package consult
+    ;; Replace bindings. Lazily loaded due by `use-package'.
+    :bind (;; C-c bindings (mode-specific-map)
+           ("C-c h" . consult-history)
+           ("C-c m" . consult-mode-command)
+           ("C-c b" . consult-bookmark)
+           ("C-c k" . consult-kmacro)
+           ;; C-x bindings (ctl-x-map)
+           ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+           ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+           ("C-x C-b" . consult-buffer)                ;; orig. switch-to-buffer
+           ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+           ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+           ;; Custom M-# bindings for fast register access
+           ("M-#" . consult-register-load)
+           ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+           ("C-M-#" . consult-register)
+           ;; Other custom bindings
+           ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+           ("<help> a" . consult-apropos)            ;; orig. apropos-command
+           ;; M-g bindings (goto-map)
+           ("M-g e" . consult-compile-error)
+           ("M-g f" . consult-flycheck)               ;; Alternative: consult-flymake
+           ("M-g g" . consult-goto-line)             ;; orig. goto-line
+           ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+           ("M-g o" . consult-org-heading)               ;; Alternative: consult-outline
+           ("M-g a" . consult-org-agenda)
+
+           ("M-g m" . consult-mark)
+           ("M-g k" . consult-global-mark)
+           ("M-g i" . consult-imenu)
+           ("M-g I" . consult-imenu-multi)
+           ;; M-s bindings (search-map)
+           ("M-s f" . consult-find)
+           ("M-s F" . consult-locate)
+           ("M-s g" . consult-grep)
+           ("M-s G" . consult-git-grep)
+           ("M-s r" . consult-ripgrep)
+           ("M-s l" . consult-line)
+           ("M-s L" . consult-line-multi)
+           ("M-s m" . consult-multi-occur)
+           ("M-s k" . consult-keep-lines)
+           ("M-s u" . consult-focus-lines)
+           ;; Isearch integration
+           ("M-s e" . consult-isearch-history)
+           :map isearch-mode-map
+           ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+           ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+           ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+           ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
+
+    ;; Enable automatic preview at point in the *Completions* buffer. This is
+    ;; relevant when you use the default completion UI. You may want to also
+    ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
+    :hook (completion-list-mode . consult-preview-at-point-mode)
+
+    ;; The :init configuration is always executed (Not lazy)
+    :init
+
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0
+          register-preview-function #'consult-register-format)
+
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
+
+    ;; Optionally replace `completing-read-multiple' with an enhanced version.
+    (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
+
+    ;; Configure other variables and modes in the :config section,
+    ;; after lazily loading the package.
+    :config
+
+    ;; Optionally configure preview. The default value
+    ;; is 'any, such that any key triggers the preview.
+    ;; (setq consult-preview-key 'any)
+    ;; (setq consult-preview-key (kbd "M-."))
+    ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+    ;; For some commands and buffer sources it is useful to configure the
+    ;; :preview-key on a per-command basis using the `consult-customize' macro.
+    (consult-customize
+     consult-theme
+     :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file consult-xref
+     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+     :preview-key (kbd "M-."))
+
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (setq consult-narrow-key "<") ;; (kbd "C-+")
+
+    ;; Optionally make narrowing help available in the minibuffer.
+    ;; You may want to use `embark-prefix-help-command' or which-key instead.
+    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+    ;; Optionally configure a function which returns the project root directory.
+    ;; There are multiple reasonable alternatives to chose from.
+    ;;;; 1. project.el (project-roots)
+    (setq consult-project-root-function
+          (lambda ()
+            (when-let (project (project-current))
+              (car (project-roots project)))))
+    ;;;; 2. projectile.el (projectile-project-root)
+    ;; (autoload 'projectile-project-root "projectile")
+    ;; (setq consult-project-root-function #'projectile-project-root)
+    ;;;; 3. vc.el (vc-root-dir)
+    ;; (setq consult-project-root-function #'vc-root-dir)
+    ;;;; 4. locate-dominating-file
+    ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
+  )
+#+END_SRC
+
+** Embark
+
+#+BEGIN_SRC emacs-lisp
+(use-package embark
+  :ensure t
+
+  :bind
+  (("C-<" . embark-act)         ;; pick some comfortable binding
+   ("C->" . embark-dwim)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+  :init
+
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :demand t ; only necessary if you have the hook below
+  ;; if you want to have consult previews as you move around an
+  ;; auto-updating embark collect buffer
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
+#+END_SRC
+
+** Ivy
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package ivy
+  :ensure try
+                      :config
+                        (setq ivy-use-virtual-buffers t)
+                        (setq ivy-count-format "(%d/%d) ")
+                        (setq enable-recursive-minibuffers t)
+                        (global-set-key (kbd "C-c C-r") 'ivy-resume)
+                        (global-set-key (kbd "<f6>") 'ivy-resume)
+                      :delight
+                  :init
+                    (ivy-mode 1)
+                )
+
+(use-package swiper
+  :ensure t
+  :init
+    (global-set-key "\C-s" 'swiper))
+#+END_SRC
+
+** Counsel
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package counsel
+                    :ensure t
+                    :config
+                    (global-set-key (kbd "M-x") 'counsel-M-x)
+                    (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+                    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+                    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+                    (global-set-key (kbd "<f1> l") 'counsel-find-library)
+                    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+                    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+                    (global-set-key (kbd "C-c g") 'counsel-git)
+                    (global-set-key (kbd "C-c j") 'counsel-git-grep)
+                    (global-set-key (kbd "C-c k") 'counsel-ag)
+                    (global-set-key (kbd "C-x l") 'counsel-locate)
+                    (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+                  )
+#+END_SRC
+
+** Ido
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package ibuffer
+  :bind ("C-x C-b" . ibuffer))
+
+(use-package ibuffer-projectile
+  :ensure t
+  :config
+  (add-hook 'ibuffer-hook #'ibuffer-projectile-set-filter-groups))
+
+(use-package ido
+  :ensure t
+  :init (ido-mode)
+  :config
+  (setq ido-enable-flex-matching t
+        ido-completion-buffer nil
+        ido-use-faces nil))
+
+(use-package flx-ido
+  :ensure t
+  :init (flx-ido-mode))
+
+(use-package ido-vertical-mode
+  :ensure t
+  :init (ido-vertical-mode))
+#+END_SRC
+
+** Undo Tree
+#+BEGIN_SRC emacs-lisp
+(use-package undo-tree
+  :diminish undo-tree-mode
+  :ensure t)
+#+END_SRC
+
+** Uniquify Buffer Names
+#+begin_src emacs-lisp
+;; Add parts of each file's directory to the buffer name if not unique
+(use-package uniquify
+   :ensure nil
+   :config
+   (setq uniquify-buffer-name-style 'forward)
+   (setq uniquify-separator "/")
+   (setq uniquify-after-kill-buffer-p t)
+   (setq uniquify-ignore-buffers-re "^\\*"))
+#+end_src
+
+** Which Key support
+#+BEGIN_SRC emacs-lisp
+        (use-package which-key
+      :ensure t
+    :init
+  (require 'which-key)
+(which-key-mode))
+#+END_SRC
+
+#+END_SRC
+* Org Configuration
+
+#+BEGIN_SRC emacs-lisp
+    ;(use-package org
+    ;      :ensure t
+    ;      :delight org-mode "✎")
+    (use-package org
+      :init
+      (add-hook 'org-mode-hook 'visual-line-mode)
+      (add-hook 'org-mode-hook 'flyspell-mode)
+      (add-hook 'org-mode-hook 'auto-save-visited-mode)
+      :diminish visual-line-mode
+      :diminish org-indent-mode
+    :delight org-mode "✎"
+      :defer t
+      :bind (("\C-c a" . org-agenda)
+         ("\C-c c" . org-capture))
+      :config
+
+      ;; Expansion for blocks "<s" -> "#+BEGIN_SRC"
+      (require 'org-tempo)
+
+      ;; Fix evil-auto-indent for org buffers.
+      (defun gs-org-disable-evil-auto-indent nil
+        "Disables evil's auto-indent for org."
+        (setq evil-auto-indent nil)
+        )
+      (add-hook 'org-mode-hook #'gs-org-disable-evil-auto-indent)
+
+      ;; Custom functions for emacs & org mode
+    ;  (load-file "~/.emacs.d/config/gs-org.el")
+
+    (require 'org-agenda)
+
+    ;;; Code:
+    ;; Some general settings
+    (setq org-default-notes-file "~/org/gtd/refile.org")
+    (defvar org-default-diary-file "~/org/gtd/diary.org")
+
+    (setq org-log-into-drawer t)
+
+    ;; Display properties
+    (setq org-cycle-separator-lines 0)
+    (setq org-tags-column -80)
+    (setq org-latex-prefer-user-labels t)
+
+    ;; Dim blocked tasks (and other settings)
+    (setq org-enforce-todo-dependencies t)
+
+    ;; Set default column view headings: Task Effort Clock_Summary
+    (setq org-columns-default-format "%50ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM %16TIMESTAMP_IA")
+
+    (setq org-log-into-drawer t)
+
+    ;; ;; == Tags ==
+    ;; (setq org-tag-alist '((:startgroup)
+    ;; 		      ("@errand" . ?e)
+    ;; 		      ("@campus" . ?c)
+    ;; 		      ("@home" . ?h)
+    ;; 		      (:endgroup)
+    ;; 		      ("WAITING" . ?w)
+    ;; 		      ("PERSONAL" . ?P)
+    ;; 		      ("RRG" . ?W)
+    ;; 		      ("NOTE" . ?n)
+    ;; 		      ("AR" . ?a)
+    ;; 		      ))
+
+    ;; Allow setting single tags without the menu
+    (setq org-fast-tag-selection-single-key 'expert)
+
+    ;; Include the todo keywords
+    (setq org-fast-tag-selection-include-todo t)
+
+    ;; == Custom State Keywords ==
+    (setq org-use-fast-todo-selection t)
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "NEXT(n)" "PROJ(p)" "|" "DONE(d)")
+        (sequence "TASK(T)")
+        (sequence "AMOTIVATOR(MA)" "TMOTIVATOR(MT)" "CMOTIVATOR(MC)")
+        (sequence "WAITING(w@/!)" "INACTIVE(i)" "SOMEDAY(s)" "|" "CANCELLED(c@/!)")))
+    ;; Custom colors for the keywords
+    (setq org-todo-keyword-faces
+          '(("TODO" :foreground "red" :weight bold)
+        ("TASK" :foreground "#5C888B" :weight bold)
+        ("NEXT" :foreground "blue" :weight bold)
+        ("PROJ" :foreground "magenta" :weight bold)
+        ("AMOTIVATOR" :foreground "#F06292" :weight bold)
+        ("TMOTIVATOR" :foreground "#AB47BC" :weight bold)
+        ("CMOTIVATOR" :foreground "#5E35B1" :weight bold)
+        ("DONE" :foreground "forest green" :weight bold)
+        ("WAITING" :foreground "orange" :weight bold)
+        ("INACTIVE" :foreground "magenta" :weight bold)
+        ("SOMEDAY" :foreground "cyan" :weight bold)
+        ("CANCELLED" :foreground "forest green" :weight bold)))
+    ;; Auto-update tags whenever the state is changed
+    (setq org-todo-state-tags-triggers
+          '(("CANCELLED" ("CANCELLED" . t))
+        ("WAITING" ("SOMEDAY") ("INACTIVE") ("WAITING" . t))
+        ("INACTIVE" ("WAITING") ("SOMEDAY") ("INACTIVE" . t))
+        ("SOMEDAY" ("WAITING") ("INACTIVE") ("SOMEDAY" . t))
+        (done ("WAITING") ("INACTIVE") ("SOMEDAY"))
+        ("TODO" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("TASK" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("NEXT" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("PROJ" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("AMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("TMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("CMOTIVATOR" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))
+        ("DONE" ("WAITING") ("CANCELLED") ("INACTIVE") ("SOMEDAY"))))
+
+    (defun gs/mark-next-done-parent-tasks-todo ()
+      "Visit each parent task and change NEXT (or DONE) states to TODO."
+      ;; Don't change the value if new state is "DONE"
+      (let ((mystate (or (and (fboundp 'org-state)
+                              (member state
+                      (list "NEXT" "TODO")))
+                         (member (nth 2 (org-heading-components))
+                     (list "NEXT" "TODO")))))
+        (when mystate
+          (save-excursion
+            (while (org-up-heading-safe)
+              (when (member (nth 2 (org-heading-components)) (list "NEXT" "DONE"))
+                (org-todo "TODO")))))))
+    ;; Note: I want to disable this for now
+    ;; (add-hook 'org-after-todo-state-change-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+
+    ;; == Capture Mode Settings ==
+    ;; Define the custum capture templates
+    (defvar org-capture-templates
+           '(("t" "Todo" entry (file org-default-notes-file)
+          "* TODO %?\n%u\n%a\n" :clock-in t :clock-resume t)
+         ("b" "Blank" entry (file org-default-notes-file)
+          "* %?\n%u")
+         ("m" "Meeting" entry (file org-default-notes-file)
+          "* Meeting with %? :MEETING:\n" :clock-in t :clock-resume t)
+         ("d" "Diary" entry (file+datetree "~/org/gtd/diary.org")
+          "* %?\n%U\n" :clock-in t :clock-resume t)
+         ("D" "Daily Log" entry (file "~/org/gtd/daily-log.org")
+          "* %u %?\n#+BEGIN: gjs-daily-clocktable :maxlevel 4 :date \"%u\" :link t :compact t \n#+END:\n\n*Summary*: \n\n*Problem*: \n\n*Insight*: \n\n*Tomorrow*: ")
+         ("i" "Idea" entry (file org-default-notes-file)
+          "* %? :IDEA: \n%u" :clock-in t :clock-resume t)
+         ("n" "Next Task" entry (file+headline org-default-notes-file "Tasks")
+          "** NEXT %? \nDEADLINE: %t")
+         ))
+
+    ;; == Refile ==
+    ;; Targets include this file and any file contributing to the agenda - up to 9 levels deep
+    (setq org-refile-targets (quote ((nil :maxlevel . 9)
+                                     (org-agenda-files :maxlevel . 9))))
+
+    ;;  Be sure to use the full path for refile setup
+    (setq org-refile-use-outline-path t)
+    (setq org-outline-path-complete-in-steps nil)
+
+    ;; Allow refile to create parent tasks with confirmation
+    (setq org-refile-allow-creating-parent-nodes 'confirm)
+
+    ;; == Archive ==
+    (setq org-archive-location "archive/%s_archive::")
+    (defvar org-archive-file-header-format "#+FILETAGS: ARCHIVE\nArchived entries from file %s\n")
+
+    ;; == Habits ==
+    (require 'org-habit)
+    (add-to-list 'org-modules 'org-habit)
+    (setq org-habit-graph-column 44)
+    (setq org-habit-show-habits-only-for-today t)
+
+    ;; == Checklists ==
+    ;(require 'org-checklist)
+
+    ;; == Org-ID ==
+    (require 'org-id)
+    ;; I might also need org-ref
+
+    ;;;; bh/helper-functions
+
+    (defun gs/is-project-p ()
+      "A task with a 'PROJ' keyword"
+      (member (nth 2 (org-heading-components)) '("PROJ")))
+
+    (defun bh/is-project-p ()
+      "Any task with a todo keyword subtask."
+      (save-restriction
+        (widen)
+        (let ((has-subtask)
+              (subtree-end (save-excursion (org-end-of-subtree t)))
+              (is-a-task (member (nth 2 (org-heading-components)) org-todo-keywords-1)))
+          (save-excursion
+            (forward-line 1)
+            (while (and (not has-subtask)
+                        (< (point) subtree-end)
+                        (re-search-forward "^\*+ " subtree-end t))
+              (when (member (org-get-todo-state) org-todo-keywords-1)
+                (setq has-subtask t))))
+          (and is-a-task has-subtask))))
+
+    (defun gs/find-project-task ()
+      "Any task with a todo keyword that is in a project subtree"
+      (save-restriction
+        (widen)
+        (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
+          (while (org-up-heading-safe)
+        (when (member (nth 2 (org-heading-components)) '("PROJ"))
+          (setq parent-task (point))))
+          (goto-char parent-task)
+          parent-task)))
+
+    (defun gs/is-project-subtree-p ()
+      "Any task with a todo keyword that is in a project subtree.
+    Callers of this function already widen the buffer view."
+      (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
+                                  (point))))
+        (save-excursion
+          (gs/find-project-task)
+          (if (equal (point) task)
+              nil t))))
+
+
+    (defun bh/find-project-task ()
+      "Move point to the parent (project) task if any."
+      (save-restriction
+        (widen)
+        (let ((parent-task (save-excursion (org-back-to-heading 'invisible-ok) (point))))
+          (while (org-up-heading-safe)
+            (when (member (nth 2 (org-heading-components)) org-todo-keywords-1)
+              (setq parent-task (point))))
+          (goto-char parent-task)
+          parent-task)))
+
+    (defun bh/is-project-subtree-p ()
+      "Any task with a todo keyword that is in a project subtree.
+    Callers of this function already widen the buffer view."
+      (let ((task (save-excursion (org-back-to-heading 'invisible-ok)
+                                  (point))))
+        (save-excursion
+          (bh/find-project-task)
+          (if (equal (point) task)
+              nil
+            t))))
+
+    ;; == Contacts ==
+    ;(require 'org-contacts)
+
+    (defun gs-store-org-headline ()
+      (interactive)
+      (when (and (eq major-mode 'org-mode)
+                 (org-at-heading-p))
+        (org-store-link-props
+         :type "file"
+         :link (format "file:*%s" (nth 4 (org-heading-components)))
+         :description (nth 4 (org-heading-components)))))
+
+    (defun gstest ()
+      (interactive)
+      ;; Just link to current headline
+      (setq cpltxt (concat "file:"
+                   (abbreviate-file-name
+                (buffer-file-name (buffer-base-buffer)))))
+      ;; Add a context search string
+      (when t
+        (let* ((element (org-element-at-point))
+           (name (org-element-property :name element)))
+          (setq txt (cond
+             ((org-at-heading-p) nil)
+             (name)
+             ((org-region-active-p)
+              (buffer-substring (region-beginning) (region-end)))))
+          (when (or (null txt) (string-match "\\S-" txt))
+        (setq cpltxt
+              (concat cpltxt "::"
+                  (condition-case nil
+                  (org-make-org-heading-search-string txt)
+                (error "")))
+              desc (or name
+                   (nth 4 (ignore-errors (org-heading-components)))
+                   "NONE")))))
+      (when (string-match "::\\'" cpltxt)
+        (setq cpltxt (substring cpltxt 0 -2)))
+      (setq link cpltxt)
+      link
+      )
+
+
+
+    (defun gs-helm-org-link-to-contact ()
+      (interactive)
+      (if (eq major-mode 'org-mode)
+          (let ((temp-point (point))
+            (temp-buffer (current-buffer))
+            (org-refile-targets (quote (("~/org/contacts.org" :level . 2))))
+           ;; (org-refile-targets (quote ((("~/org/contacts.org")) :maxlevel . 9)))
+            )
+        (org-refile '(4))
+        (let ((link-text (gstest))
+              (desc-text (nth 4 (org-heading-components))))
+               ;(concat "[[file:contacts.org::" (nth 4 (org-heading-components)) "]]")))
+          (unless (eq (current-buffer) temp-buffer) (switch-to-buffer temp-buffer))
+          (goto-char temp-point)
+          (insert (concat "[[" link-text "][" desc-text "]]")
+          )
+        ))
+        (user-error "This function is meant to be called within org")
+        ))
+
+    ;; == clocking Functions ==
+    (require 'org-clock)
+
+    ;; If not a project, clocking-in changes TODO to NEXT
+    (setq org-clock-in-switch-to-state 'bh/clock-in-to-next)
+    (defun bh/clock-in-to-next (kw)
+      "Switch a task from TODO to NEXT when clocking in.
+    Skips capture tasks, projects, and subprojects.
+    Switch projects and subprojects from NEXT back to TODO"
+      (when (not (and (boundp 'org-capture-mode) org-capture-mode))
+        (cond
+         ((and (member (org-get-todo-state) (list "TODO"))
+               (not (bh/is-project-p)))
+          "NEXT")
+         ((and (member (org-get-todo-state) (list "NEXT"))
+               (bh/is-project-p))
+          "TODO"))))
+
+    (add-hook 'org-mode-hook
+        (lambda ()
+          (define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)))
+
+    ;; Also ensure that NEXT projects are switched to TODO when clocking in
+    (add-hook 'org-clock-in-hook 'gs/mark-next-done-parent-tasks-todo 'append)
+#+END_SRC
+
+** Agenda
+
+#+BEGIN_SRC emacs-lisp
+;; == Agenda ==
+
+;(load-file "~/.emacs.d/config/gs-org-agenda.el")
+;;; gs-org-agenda.el --- Customizations/extensions for org-agenda
+
+;; Copyright (C) 2019 Gregory J Stein
+
+;; Author: Gregory J Stein <gregory.j.stein@gmail.com>
+;; Maintainer: Gregory J Stein <gregory.j.stein@gmail.com>
+;; Created: 18 Jan 2019
+
+;; Keywords: configuration, org
+;; Homepage: https://github.com/gjstein/emacs.d
+
+;;; Commentary:
+
+
+;;; Code:
+
+(require 'org-agenda)
+
+;;;; General Agenda Settings
+
+(setq org-agenda-files (quote ("~/org" "~/org/gtd" "~/org/gtd/archive")))
+(setq org-agenda-tags-column org-tags-column)
+(setq org-agenda-sticky t)
+(setq org-agenda-inhibit-startup nil)
+(setq org-agenda-dim-blocked-tasks nil)
+
+;; Compact the block agenda view (disabled)
+(setq org-agenda-compact-blocks nil)
+
+;; Set the times to display in the time grid
+(setq org-agenda-time-grid
+      (quote
+       ((daily today remove-match)
+        (800 1200 1600 2000)
+        "......" "----------------")))
+
+;; Variables for ignoring tasks with deadlines
+(defvar gs/hide-deadline-next-tasks t)
+(setq org-agenda-tags-todo-honor-ignore-options t)
+(setq org-deadline-warning-days 10)
+
+;;;; Task and project filter functions
+; Some helper functions for selection within agenda views
+
+(defun gs/select-with-tag-function (select-fun-p)
+  (save-restriction
+    (widen)
+    (let ((next-headline
+	   (save-excursion (or (outline-next-heading)
+			       (point-max)))))
+      (if (funcall select-fun-p) nil next-headline))))
+
+(defun gs/select-projects ()
+  "Selects tasks which are project headers"
+  (gs/select-with-tag-function #'gs/is-project-p))
+
+(defun gs/select-project-tasks ()
+  "Skips tags which belong to projects (and is not a project itself)"
+  (gs/select-with-tag-function
+   #'(lambda () (and
+		 (not (gs/is-project-p))
+		 (gs/is-project-subtree-p)))))
+
+(defun gs/select-standalone-tasks ()
+  "Skips tags which belong to projects. Is neither a project, nor does it blong to a project"
+  (gs/select-with-tag-function
+   #'(lambda () (and
+		 (not (gs/is-project-p))
+		 (not (gs/is-project-subtree-p))))))
+
+(defun gs/select-projects-and-standalone-tasks ()
+  "Skips tags which are not projects"
+  (gs/select-with-tag-function
+   #'(lambda () (or
+		 (gs/is-project-p)
+		 (gs/is-project-subtree-p)))))
+
+(defun gs/org-agenda-project-warning ()
+  "Is a project stuck or waiting. If the project is not stuck,
+show nothing. However, if it is stuck and waiting on something,
+show this warning instead."
+  (if (gs/org-agenda-project-is-stuck)
+    (if (gs/org-agenda-project-is-waiting) " !W" " !S") ""))
+
+(defun gs/org-agenda-project-is-stuck ()
+  "Is a project stuck"
+  (if (gs/is-project-p) ; first, check that it's a project
+      (let* ((subtree-end (save-excursion (org-end-of-subtree t)))
+	     (has-next))
+	(save-excursion
+	  (forward-line 1)
+	  (while (and (not has-next)
+		      (< (point) subtree-end)
+		      (re-search-forward "^\\*+ NEXT " subtree-end t))
+	    (unless (member "WAITING" (org-get-tags-at))
+	      (setq has-next t))))
+	(if has-next nil t)) ; signify that this project is stuck
+    nil)) ; if it's not a project, return an empty string
+
+(defun gs/org-agenda-project-is-waiting ()
+  "Is a project stuck"
+  (if (gs/is-project-p) ; first, check that it's a project
+      (let* ((subtree-end (save-excursion (org-end-of-subtree t))))
+	(save-excursion
+	  (re-search-forward "^\\*+ WAITING" subtree-end t)))
+    nil)) ; if it's not a project, return an empty string
+
+;; Some helper functions for agenda views
+(defun gs/org-agenda-prefix-string ()
+  "Format"
+  (let ((path (org-format-outline-path (org-get-outline-path))) ; "breadcrumb" path
+	(stuck (gs/org-agenda-project-warning))) ; warning for stuck projects
+       (if (> (length path) 0)
+	   (concat stuck ; add stuck warning
+		   " [" path "]") ; add "breadcrumb"
+	 stuck)))
+
+(defun gs/org-agenda-add-location-string ()
+  "Gets the value of the LOCATION property"
+  (let ((loc (org-entry-get (point) "LOCATION")))
+    (if (> (length loc) 0)
+	(concat "{" loc "} ")
+      "")))
+
+;;;; Agenda block definitions
+
+(defvar gs-org-agenda-block--today-schedule
+  '(agenda "" ((org-agenda-overriding-header "Today's Schedule:")
+	       (org-agenda-span 'day)
+	       (org-agenda-ndays 1)
+	       (org-agenda-start-on-weekday nil)
+	       (org-agenda-start-day "+0d")))
+  "A block showing a 1 day schedule.")
+
+(defvar gs-org-agenda-block--weekly-log
+  '(agenda "" ((org-agenda-overriding-header "Weekly Log")))
+  "A block showing my schedule and logged tasks for this week.")
+
+(defvar gs-org-agenda-block--previous-calendar-data
+  '(agenda "" ((org-agenda-overriding-header "Previous Calendar Data (last 3 weeks)")
+	       (org-agenda-start-day "-21d")
+	       (org-agenda-span 21)
+	       (org-agenda-start-on-weekday nil)))
+  "A block showing my schedule and logged tasks for the last few weeks.")
+
+(defvar gs-org-agenda-block--upcoming-calendar-data
+  '(agenda "" ((org-agenda-overriding-header "Upcoming Calendar Data (next 2 weeks)")
+	       (org-agenda-start-day "0d")
+	       (org-agenda-span 14)
+	       (org-agenda-start-on-weekday nil)))
+  "A block showing my schedule for the next couple weeks.")
+
+(defvar gs-org-agenda-block--refile
+  '(tags "REFILE-ARCHIVE-REFILE=\"nil\"|INFO"
+	 ((org-agenda-overriding-header "Headings needing refiling or other info:")
+	  (org-tags-match-list-sublevels nil)))
+  "Headings needing refiling or other info.")
+
+(defvar gs-org-agenda-block--next-tasks
+  '(tags-todo "-INACTIVE-SOMEDAY-CANCELLED-ARCHIVE/!NEXT"
+	      ((org-agenda-overriding-header "Next Tasks:")
+	       ))
+  "Next tasks.")
+
+(defvar gs-org-agenda-block--active-projects
+  '(tags-todo "-INACTIVE-SOMEDAY-CANCELLED-REFILEr/!"
+	      ((org-agenda-overriding-header "Active Projects:")
+	       (org-agenda-skip-function 'gs/select-projects)))
+  "All active projects: no inactive/someday/cancelled/refile.")
+
+(defvar gs-org-agenda-block--standalone-tasks
+  '(tags-todo "-INACTIVE-SOMEDAY-CANCELLED-REFILE-ARCHIVE-STYLE=\"habit\"/!-NEXT"
+	      ((org-agenda-overriding-header "Standalone Tasks:")
+	       (org-agenda-skip-function 'gs/select-standalone-tasks)))
+  "Tasks (TODO) that do not belong to any projects.")
+
+(defvar gs-org-agenda-block--waiting-tasks
+  '(tags-todo "-INACTIVE-SOMEDAY-CANCELLED-ARCHIVE/!WAITING"
+	     ((org-agenda-overriding-header "Waiting Tasks:")
+	      ))
+  "Tasks marked as waiting.")
+
+(defvar gs-org-agenda-block--remaining-project-tasks
+  '(tags-todo "-INACTIVE-SOMEDAY-CANCELLED-WAITING-REFILE-ARCHIVE/!-NEXT"
+	      ((org-agenda-overriding-header "Remaining Project Tasks:")
+	       (org-agenda-skip-function 'gs/select-project-tasks)))
+  "Non-NEXT TODO items belonging to a project.")
+
+(defvar gs-org-agenda-block--inactive-tags
+  '(tags-todo "-SOMEDAY-ARCHIVE-CANCELLED/!INACTIVE"
+	 ((org-agenda-overriding-header "Inactive Projects and Tasks")
+	  (org-tags-match-list-sublevels nil)))
+  "Inactive projects and tasks.")
+
+(defvar gs-org-agenda-block--someday-tags
+  '(tags-todo "-INACTIVE-ARCHIVE-CANCELLED/!SOMEDAY"
+	 ((org-agenda-overriding-header "Someday Projects and Tasks")
+	  (org-tags-match-list-sublevels nil)))
+  "Someday projects and tasks.")
+
+(defvar gs-org-agenda-block--motivators
+  '(todo "AMOTIVATOR|TMOTIVATOR|CMOTIVATOR"
+	 ((org-agenda-overriding-header "Motivators (Active/Tangible/Conceptual)")))
+  "All my 'motivators' across my projects.")
+
+(defvar gs-org-agenda-block--end-of-agenda
+  '(tags "ENDOFAGENDA"
+	 ((org-agenda-overriding-header "End of Agenda")
+	  (org-tags-match-list-sublevels nil)))
+  "End of the agenda.")
+
+(defvar gs-org-agenda-display-settings
+  '((org-agenda-start-with-log-mode t)
+    (org-agenda-log-mode-items '(clock))
+    (org-agenda-prefix-format '((agenda . "  %-12:c%?-12t %(gs/org-agenda-add-location-string)% s")
+				(timeline . "  % s")
+				(todo . "  %-12:c %(gs/org-agenda-prefix-string) ")
+				(tags . "  %-12:c %(gs/org-agenda-prefix-string) ")
+				(search . "  %i %-12:c")))
+    (org-agenda-todo-ignore-deadlines 'near)
+    (org-agenda-todo-ignore-scheduled t))
+  "Display settings for my agenda views.")
+
+(defvar gs-org-agenda-entry-display-settings
+  '(,gs-org-agenda-display-settings
+    (org-agenda-entry-text-mode t))
+  "Display settings for my agenda views with entry text.")
+
+;;;; Agenda Definitions
+
+(setq org-agenda-custom-commands
+      `(("h" "Habits" agenda "STYLE=\"habit\""
+	 ((org-agenda-overriding-header "Habits")
+	  (org-agenda-sorting-strategy
+	   '(todo-state-down effort-up category-keep))))
+	(" " "Export Schedule"
+	 (,gs-org-agenda-block--today-schedule
+	  ,gs-org-agenda-block--refile
+	  ,gs-org-agenda-block--next-tasks
+	  ,gs-org-agenda-block--active-projects
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("L" "Weekly Log"
+	 (,gs-org-agenda-block--weekly-log)
+	 ,gs-org-agenda-display-settings)
+	("r " "Agenda Review (all)"
+	 (,gs-org-agenda-block--next-tasks
+	  ,gs-org-agenda-block--refile
+	  ,gs-org-agenda-block--active-projects
+	  ,gs-org-agenda-block--standalone-tasks
+	  ,gs-org-agenda-block--waiting-tasks
+	  ,gs-org-agenda-block--remaining-project-tasks
+	  ,gs-org-agenda-block--inactive-tags
+	  ,gs-org-agenda-block--someday-tags
+	  ,gs-org-agenda-block--motivators
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("rn" "Agenda Review (next tasks)"
+	 (,gs-org-agenda-block--next-tasks
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("rp" "Agenda Review (previous calendar data)"
+	 (,gs-org-agenda-block--previous-calendar-data
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("ru" "Agenda Review (upcoming calendar data)"
+	 (,gs-org-agenda-block--upcoming-calendar-data
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("rw" "Agenda Review (waiting tasks)"
+	 (,gs-org-agenda-block--waiting-tasks
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("rP" "Agenda Review (projects list)"
+	 (,gs-org-agenda-block--active-projects
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("ri" "Agenda Review (someday and inactive projects/tasks)"
+	 (,gs-org-agenda-block--someday-tags
+	  ,gs-org-agenda-block--inactive-tags
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-display-settings)
+	("rm" "Agenda Review (motivators)"
+	 (,gs-org-agenda-block--motivators
+	  ,gs-org-agenda-block--end-of-agenda)
+	 ,gs-org-agenda-entry-display-settings)
+	))
+
+
+;;;; Agenda Navigation
+
+;; Search for a "=" and go to the next line
+(defun gs/org-agenda-next-section ()
+  "Go to the next section in an org agenda buffer."
+  (interactive)
+  (if (search-forward "===" nil t 1)
+      (forward-line 1)
+    (goto-char (point-max)))
+  (beginning-of-line))
+
+;; Search for a "=" and go to the previous line
+(defun gs/org-agenda-prev-section ()
+  "Go to the next section in an org agenda buffer."
+  (interactive)
+  (forward-line -2)
+  (if (search-forward "===" nil t -1)
+      (forward-line 1)
+    (goto-char (point-min))))
+
+;;;; Agenda Post-processing
+
+;; Highlight the "!!" for stuck projects (for emphasis)
+(defun gs/org-agenda-project-highlight-warning ()
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "!W" nil t)
+      (progn
+	(add-face-text-property
+	 (match-beginning 0) (match-end 0)
+	 '(bold :foreground "orange"))
+	))
+    (goto-char (point-min))
+    (while (re-search-forward "!S" nil t)
+      (progn
+	(add-face-text-property
+	 (match-beginning 0) (match-end 0)
+	 '(bold :foreground "white" :background "red"))
+	))
+    (goto-char (point-min))
+    (while (re-search-forward ":OPT:" nil t)
+      (progn
+	(put-text-property
+	 (+ 14 (point-at-bol)) (match-end 0)
+	 'face 'font-lock-comment-face)  ; also 'org-time-grid
+	))
+    (goto-char (point-min))
+    (while (re-search-forward ":TENT:" nil t)
+      (progn
+	(put-text-property
+	 (+ 14 (point-at-bol)) (match-end 0)
+	 'face 'font-lock-comment-face)
+	))
+    ))
+(add-hook 'org-agenda-finalize-hook 'gs/org-agenda-project-highlight-warning)
+
+;; Remove empty agenda blocks
+(defun gs/remove-agenda-regions ()
+  (save-excursion
+    (goto-char (point-min))
+    (let ((region-large t))
+      (while (and (< (point) (point-max)) region-large)
+	(set-mark (point))
+	(gs/org-agenda-next-section)
+	(if (< (- (region-end) (region-beginning)) 5) (setq region-large nil)
+	  (if (< (count-lines (region-beginning) (region-end)) 4)
+	      (delete-region (region-beginning) (region-end)))
+	  )))))
+(add-hook 'org-agenda-finalize-hook 'gs/remove-agenda-regions)
+
+;;; gs-org-agenda.el ends here
+;; === Custom Clocktable ===
+(require 'org-clock)
+(defun gjs-org-clocktable-filter-empty-tables (ipos tables params)
+  "Removes all empty tables before printing the clocktable"
+  (org-clocktable-write-default ipos
+				(seq-filter
+				 (lambda (tbl)
+				   (not (null (nth 2 tbl))))
+				 tables)
+				params)
+  )
+
+(defun org-dblock-write:gjs-daily-clocktable (params)
+  "Custom clocktable command for my daily log"
+  (let ((local-params params)
+	(date-str
+	 (if (plist-get params ':date)
+	 (substring
+		   (plist-get params ':date)
+		   1 11)))
+	)
+    (plist-put params ':block date-str)
+    (plist-put params ':formatter 'gjs-org-clocktable-filter-empty-tables)
+    (plist-put params ':scope 'agenda)
+    (org-dblock-write:clocktable params)
+    )
+  )
+
+;;; gs-org.el ends here
+  (setq org-enforce-todo-dependencies nil)
+  (setq org-display-inline-images t)
+  (setq org-redisplay-inline-images t)
+  (setq org-startup-with-inline-images "inlineimages")
+
+  ;; == Agenda ==
+  (defvar org-agenda-window-setup)
+  (setq org-agenda-window-setup 'current-window)
+#+END_SRC
+
+** Org Babel
+   Run/highlight code using babel in org-mode
+
+#+BEGIN_SRC emacs-lisp
+   (with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '(
+     (C . t)
+     (shell . t)
+     (plantuml . t)
+     )))
+
+(use-package plantuml-mode
+:ensure t
+:init
+     (setq org-plantuml-jar-path "/usr/local/Cellar/plantuml/1.2022.4/libexec/plantuml.jar")
+)
+
+  ;; Syntax hilight in #+begin_src blocks
+  (setq org-src-fontify-natively t)
+  ;; Don't prompt before running code in org
+  (setq org-confirm-babel-evaluate nil)
+  ;; Display inline images after running code
+  (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+#+END_SRC
+
+** Org Capture
+
+#+BEGIN_SRC emacs-lisp
+  ;; Capture mode
+  (add-hook 'org-capture-mode-hook 'evil-insert-state)
+
+;  (general-define-key
+;   :keymaps 'org-capture-mode-map
+;   :states '(normal motion)
+;   :prefix gjs-leader-key
+;   "c" 'org-capture-finalize
+;   "k" 'org-capture-kill
+;   "w" 'org-capture-refile
+;   )
+
+  ;; Evil key configurations (agenda)
+  (defvar org-agenda-mode-map)
+  (general-define-key
+   :keymaps 'org-agenda-mode-map
+   :states '(normal motion)
+   "l" 'org-agenda-later
+   "h" 'org-agenda-earlier
+   "j" 'org-agenda-next-line
+   "k" 'org-agenda-previous-line
+   (kbd "RET") 'org-agenda-switch-to
+   [escape] 'org-agenda-quit
+   "q" 'org-agenda-quit
+   "s" 'org-save-all-org-buffers
+   "t" 'org-agenda-todo
+   "T" 'org-agenda-set-tags
+   "g" 'org-agenda-redo
+   "v" 'org-agenda-view-mode-dispatch
+   "." 'org-agenda-goto-today
+   "J" 'gs/org-agenda-next-section
+   "K" 'gs/org-agenda-prev-section
+   "c" 'org-agenda-goto-calendar
+   "i" 'org-agenda-clock-in
+   "o" 'org-agenda-clock-out
+   "E" 'org-agenda-entry-text-mode
+   )
+  (general-define-key
+   :keymaps 'org-agenda-mode-map
+   :prefix gjs-leader-key
+   :states '(normal motion)
+   "" '(:ignore t :which-key "Agenda")
+   "i" 'org-agenda-clock-in
+   "k" 'org-agenda-kill
+   "o" 'org-agenda-clock-out
+   "t" 'org-agenda-todo
+   "w" 'org-agenda-refile
+   "/" 'org-agenda-filter-by-tag
+   "cs" '(gs-org-goto :which-key "org goto")
+   )
+
+
+  ;; Evil key configuration (org)
+
+  (defun gs-org-meta-return (&optional _arg)
+    "Ensures org-meta-return switches to evil insert mode"
+    (interactive)
+    (evil-append 0)
+    (org-meta-return _arg)
+    )
+
+  (defun gs-org-insert-heading-respect-content (&optional invisible-ok)
+    "Insert heading with `org-insert-heading-respect-content' set to t."
+    (interactive)
+    (org-insert-heading '(4) invisible-ok)
+    (evil-insert 0))
+
+  (defun gs-org-goto ()
+    "Insert heading with `org-insert-heading-respect-content' set to t."
+    (interactive)
+    (org-refile '(4))
+    ;; (let ((org-goto-interface 'outline-path-completion)) (org-goto))
+    )
+
+  ;; (general-define-key
+  ;;  :keymaps org-mode-map
+  ;;  :states '(normal)
+  ;;  (kbd "<M-return>") 'gs-org-meta-return
+  ;;  (kbd "<C-return>") 'gs-org-insert-heading-respect-content
+  ;;  )
+  (general-define-key
+   :prefix gjs-leader-key
+   :keymaps 'org-mode-map
+   :states '(normal motion)
+   "i" '(org-clock-in :which-key "clock in")
+   "o" '(org-clock-out :which-key "clock out")
+   "t" '(org-todo :which-key "todo state")
+   "ct" '(org-todo :which-key "todo state")
+   "ce" '(org-export-dispatch :which-key "org export")
+   "cp" '(org-set-property :which-key "org set property")
+   "cs" '(gs-org-goto :which-key "org goto")
+   )
+  ;; some functions for timing
+  )
+
+(use-package org-ref
+  :ensure t
+  :after org
+  :init
+  (setq reftex-default-bibliography '("~/org/resources/bibliography/references.bib"))
+  ;; see org-ref for use of these variables
+  (setq org-ref-default-bibliography '("~/org/resources/bibliography/references.bib"))
+  (setq org-ref-default-citation-link "citep")
+  )
+(use-package org-contrib
+  :ensure t)
+
+(defun org-build-agenda ()
+  (interactive)
+  (setq last-build-time (format-time-string "%S.%3N"))
+  (org-agenda 0 " ")
+  (setq after-build-time (format-time-string "%S.%3N"))
+  (print last-build-time)
+  (print after-build-time)
+  )
+
+;(with-eval-after-load "org"
+;    (when (version-list-= (version-to-list org-version) '(9 4 6))
+;      (defun org-return-fix (fun &rest args)
+;        "Fix https://emacs.stackexchange.com/questions/64886."
+;        (let* ((context (if org-return-follows-link (org-element-context)
+;              (org-element-at-point)))
+;               (element-type (org-element-type context)))
+;      (if (eq element-type 'src-block)
+;          (apply #'org--newline args)
+;        (apply fun args))))
+;      (advice-add 'org-return :around #'org-return-fix)))
+;
+;(with-eval-after-load "org-src"
+;    (when (version-list-= (version-to-list org-version) '(9 4 6))
+;      (defun org-src--contents-for-write-back ()
+;        "Return buffer contents in a format appropriate for write back.
+;  Assume point is in the corresponding edit buffer."
+;        (let ((indentation-offset
+;           (if org-src--preserve-indentation 0
+;             (+ (or org-src--block-indentation 0)
+;            (if (memq org-src--source-type '(example-block src-block))
+;                org-src--content-indentation
+;              0))))
+;          (use-tabs? (and (> org-src--tab-width 0) t))
+;          (source-tab-width org-src--tab-width)
+;          (contents (org-with-wide-buffer (buffer-string)))
+;          (write-back org-src--allow-write-back))
+;      (with-temp-buffer
+;        ;; Reproduce indentation parameters from source buffer.
+;        (setq indent-tabs-mode use-tabs?)
+;        (when (> source-tab-width 0) (setq tab-width source-tab-width))
+;        ;; Apply WRITE-BACK function on edit buffer contents.
+;        (insert (org-no-properties contents))
+;        (goto-char (point-min))
+;        (when (functionp write-back) (save-excursion (funcall write-back)))
+;        ;; Add INDENTATION-OFFSET to every non-empty line in buffer,
+;        ;; unless indentation is meant to be preserved.
+;        (when (> indentation-offset 0)
+;          (while (not (eobp))
+;            (skip-chars-forward " \t")
+;            ;; (unless (eolp)     ;ignore blank lines
+;            (let ((i (current-column)))
+;          (delete-region (line-beginning-position) (point))
+;          (indent-to (+ i indentation-offset)))
+;            ;;)
+;            (forward-line)))
+;        (buffer-string))))))
+#+END_SRC
+
+** Reveal.js
+#+BEGIN_SRC emacs-lisp
+  (use-package org-re-reveal
+    :ensure t
+    :after org)
+
+  ;; (use-package oer-reveal
+  ;;     :after org
+  ;;     :ensure t)
+
+  (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+  (setq org-re-reveal-revealjs-version "4")
+#+END_SRC
+
+   #+RESULTS:
+   : 4
+
+** Toc-org
+Let's install and load the =toc-org= package after org mode is loaded. This is the
+package that automatically generates an up to date table of contents for us.
+
+#+BEGIN_SRC emacs-lisp
+(use-package toc-org
+  :after org
+  :init (add-hook 'org-mode-hook #'toc-org-enable))
+#+END_SRC
+
+* MacOS
+MacOS Customisations
+#+BEGIN_SRC emacs-lisp
+    ;; Are we on a mac?
+    (setq is-mac (equal system-type 'darwin))
+
+    (when (display-graphic-p)
+      (if is-mac
+          (menu-bar-mode 1)))
+
+    ;; Make Meta command and add Hyper.
+    (when is-mac
+      ;; Change command to meta.
+      (setq mac-command-modifier 'super)
+      (setq mac-option-modifier 'meta)
+      ;; not sure what hyper is (setq ns-function-modifier 'hyper)
+
+      ;; Use right option for special characters.
+    ;;  (setq mac-right-option-modifier 'none)
+
+      ;; Remove date and battery status from modeline
+      ;(display-time-mode -1)
+      ;(display-battery-mode -1)
+
+      ;; fix exec-path
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
+      )
+#+END_SRC
+
+* Evil Mode
+Evil Evil Evil
+#+BEGIN_SRC emacs-lisp
+    (use-package evil
+          :ensure t
+          :init
+            (setq evil-search-module 'evil-search)
+            (setq evil-ex-complete-emacs-commands nil)
+            (setq evil-vsplit-window-right t)
+            (setq evil-split-window-below t)
+            (setq evil-shift-rount nil)
+            (setq evil-want-C-u-scroll t)
+            (evil-mode 1))
+
+    (use-package evil-org
+        :ensure t
+        :after org
+        :hook (org-mode . (lambda () evil-org-mode))
+        :init
+    (evil-org-mode 1)
+          (require 'evil-org-agenda)
+    (evil-set-initial-state 'org-agenda-mode 'normal)
+        ;(evil-org-agenda-set-keys)
+  )
+#+END_SRC
+
+** EShell
+Start the eshell and bind the key to the swap function.
+#+BEGIN_SRC emacs-lisp
+(use-package eshell
+    :ensure try
+    :config
+  (defvar ejm-save-buffer "*scratch*"
+    "Stores the return buffer for the ejm-switch command.")
+  (defun ejm-shell()
+    "Switch to the shell window."
+    (interactive)
+    (cond ((equal (buffer-name) "*eshell*")
+       (switch-to-buffer ejm-saved-buffer))
+      (t
+       (setq ejm-saved-buffer (buffer-name))
+       (switch-to-buffer "*eshell*"))))
+  :init
+(eshell)
+  (global-set-key [f12] 'ejm-shell))
+#+END_SRC
+* Programming
+** Eldoc
+#+BEGIN_SRC emacs-lisp
+(use-package eldoc
+  :defer     t
+  :diminish  eldoc-mode)
+#+END_SRC
+** Prettify code
+  #+BEGIN_SRC emacs-lisp
+   ;; ----- Base set of pretty symbols.
+   (defvar base-prettify-symbols-alist '(("<=" . ?≤)
+                                      (">=" . ?≥)
+                                      ("<-" . ?←)
+                                      ("->" . ?→)
+                                      ("<=" . ?⇐)
+                                      ("=>" . ?⇒)
+                                      ("lambda" . ?λ ))
+   )
+
+   (defun ejm-lisp-prettify-symbols-hook ()
+    "Set pretty symbols for lisp modes."
+     (setq prettify-symbols-alist base-prettify-symbols-alist))
+
+   (defun ejm-js-prettify-symbols-hook ()
+     "Set pretty symbols for JavaScript."
+     (setq prettify-symbols-alist
+        (append '(("function" . ?ƒ)) base-prettify-symbols-alist)))
+
+   (defun ejm-clj-prettify-symbols-hook ()
+     "Set pretty symbols for Clojure(script)."
+     (setq prettify-symbols-alist
+        (append '(("fn" . λ)) base-prettify-symbols-alist)))
+
+   (defun other-prettify-symbols-hook ()
+     "Set pretty symbols for non-lisp programming modes."
+     (setq prettify-symbols-alist
+        (append '(("==" . ?≡)
+                           ("!=" . ?≠))
+             base-prettify-symbols-alist)))
+
+;; Hook 'em up.
+(add-hook 'emacs-lisp-mode-hook #'ejm-lisp-prettify-symbols-hook)
+(add-hook 'web-mode-hook        #'other-prettify-symbols-hook)
+(add-hook 'js-mode-hook         #'ejm-js-prettify-symbols-hook)
+(add-hook 'prog-mode-hook       #'other-prettify-symbols-hook)
+(add-hook 'clojure-mode-hook    #'ejm-clj-prettify-symbols-hook)
+
+(global-prettify-symbols-mode 1)
+
+  #+END_SRC
+** Elisp
+#+BEGIN_SRC emacs-lisp
+(use-package lisp-mode
+  :ensure nil
+;;  :delight "lisp"
+  :config
+;;  (defun ejm-visit-ielm ()
+;;    "Switch to default `ielm' buffer.
+;;Start `ielm' if it's not already running."
+;;    (interactive)
+;;    (crux-start-or-switch-to 'ielm "*ielm*"))
+
+  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
+  (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
+;;  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'ejm-visit-ielm)
+  (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'eval-defun)
+  (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
+  (add-hook 'lisp-interaction-mode-hook #'eldoc-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode))
+
+(use-package ielm
+  :config
+  (add-hook 'ielm-mode-hook #'eldoc-mode)
+  (add-hook 'ielm-mode-hook #'rainbow-delimiters-mode))
+#+END_SRC
+** Clojure
+  lets try out aggressive-indent
+#+BEGIN_SRC emacs-lisp
+  (use-package aggressive-indent
+   :ensure t)
+#+END_SRC
+  The [[https://github.com/clojure-emacs/clojure-mode][clojure-mode]] project seems to be the best (and works well with [[*Cider][Cider]]).
+
+  #+BEGIN_SRC emacs-lisp
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;; inferior lisp
+   (setq inferior-lisp-program "lein figwheel")
+
+   ;; inf-clojure test
+   (use-package inf-clojure
+     :ensure t
+     )
+
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;; inf-clojure
+
+   (setq inf-clojure-lein-cmd "lein figwheel")
+   ;; minor-mode adds key-bindings
+   ;(add-hook 'clojure-mode-hook 'inf-clojure-minor-mode)
+
+   (use-package clojure-mode
+      :ensure t
+      :mode ("\\.\\(clj\\|cljs\\|edn\\|boot\\)$" . clojure-mode )
+      :config
+       (progn
+         (setq clojure-align-forms-automatically t)
+         (add-hook 'clojure-mode-hook #'company-mode)
+         (add-hook 'clojure-mode-hook #'linum-mode)
+         (add-hook 'clojure-mode-hook #'subword-mode)
+         ;;(add-hook 'clojure-mode-hook #'paredit-mode)
+         (add-hook 'clojure-mode-hook #'smartparens-strict-mode)
+         (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+         (add-hook 'clojure-mode-hook #'eldoc-mode))
+       ;;  (add-hook 'clojure-mode-hook #'idle-highlight-mode)
+      ;; :bind (("C-c d f" . cider-code))
+       :delight "clj"
+)
+
+  #+END_SRC
+
+** Parens
+
+#+BEGIN_SRC emacs-lisp
+(use-package paren
+    :ensure nil
+    :init
+    (show-paren-mode +1)
+    (setq show-paren-style 'expression)
+    (set-face-attribute 'show-paren-match nil :foreground nil :weight 'extra-bold :inverse-video nil)
+)
+#+END_SRC
+  Use paredit
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package paredit
+     :disabled t
+    :delight " ⎎"
+    :ensure t
+    :config
+    (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
+     ;; enable in the *scratch* buffer
+     (add-hook 'lisp-interaction-mode-hook #'paredit-mode)
+     (add-hook 'ielm-mode-hook #'paredit-mode)
+     (add-hook 'lisp-mode-hook #'paredit-mode)
+     (add-hook 'clojure-mode-hook #'paredit-mode)
+     (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode))
+
+  #+END_SRC
+
+Use smartparens
+#+BEGIN_SRC emacs-lisp
+  (use-package smartparens
+  :ensure    t
+  :config
+               (require 'smartparens-config)
+              (smartparens-global-mode t)
+:diminish smartparens-mode
+  :bind
+  (("C-M-k" . sp-kill-sexp-with-a-twist-of-lime)
+   ("C-M-f" . sp-forward-sexp)
+   ("C-M-b" . sp-backward-sexp)
+   ("C-M-n" . sp-up-sexp)
+   ("C-M-d" . sp-down-sexp)
+   ("C-M-u" . sp-backward-up-sexp)
+   ("C-M-p" . sp-backward-down-sexp)
+   ("C-M-w" . sp-copy-sexp)
+   ("M-s" . sp-splice-sexp)
+   ("M-r" . sp-splice-sexp-killing-around)
+   ("C-)" . sp-forward-slurp-sexp)
+   ("C-}" . sp-forward-barf-sexp)
+   ("C-(" . sp-backward-slurp-sexp)
+   ("C-{" . sp-backward-barf-sexp)
+   ("M-S" . sp-split-sexp)
+   ("M-J" . sp-join-sexp)
+   ("C-M-t" . sp-transpose-sexp))
+  :delight " ⎎")
+#+END_SRC
+
+use rainbow delimiters
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-delimiters
+  :ensure t)
+
+;; Don't show anything for rainbow-mode.
+(use-package rainbow-mode
+  :delight)
+#+END_SRC
+
+#+END_SRC
+** Cider
+da-bomb!
+#+BEGIN_SRC emacs-lisp
+   (use-package cider
+  :ensure t
+;;  :commands (cider cider-connect cider-jack-in)
+  :init
+  (setq cider-auto-select-error-buffer t
+        ;; go right to the REPL buffer when it's finished connecting
+        cider-repl-pop-to-buffer-on-connect 'display-only
+        cider-repl-use-clojure-font-lock t
+        ;; Wrap when navigating history.
+        cider-repl-wrap-history t
+        cider-repl-history-size 1000
+        ;; When there's a cider error, show its buffer and switch to it
+        cider-show-error-buffer t
+        cider-auto-select-error-buffer t
+        nrepl-hide-special-buffers t
+        ;; Stop error buffer from popping up while working in buffers other than the REPL:
+        nrepl-popup-stacktraces nil
+        ;; Where to store the cider history.
+        cider-repl-history-file "~/.emacs.d/cider-history"
+        )
+
+  :config
+  (progn ;; (defalias 'cji 'cider-jack-in)
+    (add-hook 'cider-mode-hook #'eldoc-mode)
+    (add-hook 'cider-repl-mode-hook #'eldoc-mode)
+  ;;  (add-hook 'cider-repl-mode-hook #'smartparens-strict-mode)
+    (add-hook 'cider-repl-mode-hook #'company-mode)
+    (add-hook 'cider-mode-hook #'company-mode)
+    (add-hook 'cider-repl-mode-hook #'cider-company-enable-fuzzy-completion)
+    (add-hook 'cider-mode-hook #'cider-company-enable-fuzzy-completion)
+    ;; (add-hook 'cider-repl-mode-hook #'paredit-mode)
+    (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
+    )
+  :diminish  (cider-mode . "☤")
+)
+
+  (setq cider-cljs-lein-repl
+      "(cond
+   (and (resolve 'user/run) (resolve 'user/browser-repl)) ;; Chestnut projects
+   (eval '(do (user/run)
+             (user/browser-repl)))
+
+   (try
+    (require 'figwheel-sidecar.repl-api)
+    (resolve 'figwheel-sidecar.repl-api/start-figwheel!)
+    (catch Throwable _))
+   (eval '(do (figwheel-sidecar.repl-api/start-figwheel!)
+             (figwheel-sidecar.repl-api/cljs-repl)))
+
+   (try
+    (require 'cemerick.piggieback)
+    (resolve 'cemerick.piggieback/cljs-repl)
+    (catch Throwable _))
+   (eval '(cemerick.piggieback/cljs-repl (cljs.repl.rhino/repl-env)))
+
+   :else
+   (throw (ex-info \"Failed to initialise CLJS repl. Add com.cemerick/piggieback
+       and optionally figwheel-sidecar to your project.\" {})))")
+
+
+#+END_SRC
+** Javascript
+  JavaScript should have three parts:
+  - Syntax highlight (already included)
+  - Syntax verification (with flycheck)
+  - Interactive REPL ... using Skewer
+
+*** JS2 Mode
+
+ I like the extras found in [[http://www.emacswiki.org/emacs-test/SteveYegge][Steve Yegge]]'s [[https://github.com/mooz/js2-mode][js2-mode]].
+
+ #+BEGIN_SRC emacs-lisp
+   (use-package js2-mode
+     :ensure t
+     :interpreter ("node" . js2-mode)
+     :init
+     (setq js-basic-indent 2)
+     (setq-default js2-basic-indent 2
+                   js2-basic-offset 2
+                   js2-auto-indent-p t
+                   js2-cleanup-whitespace t
+                   js2-enter-indents-newline t
+                   js2-indent-on-enter-key t
+                   js2-global-externs (list "window" "module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON" "jQuery" "$"))
+
+     (add-hook 'js2-mode-hook
+               (lambda ()
+                 (push '("function" . ?ƒ) prettify-symbols-alist)))
+
+     (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode)))
+ #+END_SRC
+
+ Colour /defined/ variables with [[https://github.com/ankurdave/color-identifiers-mode][color-identifiers-mode]]:
+
+ #+BEGIN_SRC emacs-lisp
+  (use-package color-identifiers-mode
+      :ensure t
+      :init
+        (add-hook 'js2-mode-hook 'color-identifiers-mode))
+ #+END_SRC
+
+*** Flycheck and JSHint
+
+ While editing JavaScript is baked into Emacs, it is quite important
+ to have [[http://flycheck.readthedocs.org/][flycheck]] validate the source based on [[http://www.jshint.com/][jshint]], and [[https://github.com/eslint/eslint][eslint]].
+ Let’s prefer =eslint=:
+
+ #+BEGIN_SRC emacs-lisp
+   (add-hook 'js2-mode-hook
+             (lambda () (flycheck-select-checker "javascript-eslint")))
+ #+END_SRC
+
+ Now load and edit a JavaScript file, like [[file:~/jshint-code-test.js][jshint-code-test.js]].
+
+*** Refactoring JavaScript
+
+  The [[https://github.com/magnars/js2-refactor.el][js2-refactor]] mode should start with =C-c .= and then a two-letter
+  mnemonic shortcut.
+
+  * =ef= is =extract-function=: Extracts the marked expressions out into a new named function.
+  * =em= is =extract-method=: Extracts the marked expressions out into a new named method in an object literal.
+  * =ip= is =introduce-parameter=: Changes the marked expression to a parameter in a local function.
+  * =lp= is =localize-parameter=: Changes a parameter to a local var in a local function.
+  * =eo= is =expand-object=: Converts a one line object literal to multiline.
+  * =co= is =contract-object=: Converts a multiline object literal to one line.
+  * =eu= is =expand-function=: Converts a one line function to multiline (expecting semicolons as statement delimiters).
+  * =cu= is =contract-function=: Converts a multiline function to one line (expecting semicolons as statement delimiters).
+  * =ea= is =expand-array=: Converts a one line array to multiline.
+  * =ca= is =contract-array=: Converts a multiline array to one line.
+  * =wi= is =wrap-buffer-in-iife=: Wraps the entire buffer in an immediately invoked function expression
+  * =ig= is =inject-global-in-iife=: Creates a shortcut for a marked global by injecting it in the wrapping immediately invoked function expression
+  * =ag= is =add-to-globals-annotation=: Creates a =/*global */= annotation if it is missing, and adds the var at point to it.
+  * =ev= is =extract-var=: Takes a marked expression and replaces it with a var.
+  * =iv= is =inline-var=: Replaces all instances of a variable with its initial value.
+  * =rv= is =rename-var=: Renames the variable on point and all occurrences in its lexical scope.
+  * =vt= is =var-to-this=: Changes local =var a= to be =this.a= instead.
+  * =ao= is =arguments-to-object=: Replaces arguments to a function call with an object literal of named arguments. Requires yasnippets.
+  * =3i= is =ternary-to-if=: Converts ternary operator to if-statement.
+  * =sv= is =split-var-declaration=: Splits a =var= with multiple vars declared, into several =var= statements.
+  * =uw= is =unwrap=: Replaces the parent statement with the selected region.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package js2-refactor
+    :ensure t
+    :init   (add-hook 'js2-mode-hook 'js2-refactor-mode)
+    :config (js2r-add-keybindings-with-prefix "C-c ."))
+#+END_SRC
+
+*** Skewer
+
+  I also configure Skewer for my [[file:emacs-web.org][HTML and CSS]] files, we need to do the
+  same for JavaScript:
+
+  #+BEGIN_SRC emacs-lisp
+  (use-package skewer-mode
+     :ensure t
+     :init (add-hook 'js2-mode-hook 'skewer-mode))
+  #+END_SRC
+
+  Kick things off with =run-skewer=, and then:
+
+ * C-x C-e :: `skewer-eval-last-expression'
+ * C-M-x   :: `skewer-eval-defun'
+ * C-c C-k :: `skewer-load-buffer'
+
+*** JSON mode
+#+BEGIN_SRC emacs-lisp
+(use-package json-mode
+  :ensure    json-mode
+  :config    (bind-keys :map json-mode-map
+                        ("C-c i" . json-mode-beautify))
+  :mode      ("\\.\\(json\\)$" . json-mode))
+
+#+END_SRC
+** YAML
+#+BEGIN_SRC emacs-lisp
+(use-package yaml-mode
+  :mode ("\\.\\(yml\\|yaml\\|\\config\\|sls\\)$" . yaml-mode)
+  :ensure yaml-mode
+  :defer t)
+
+#+END_SRC
+
+** LSP mode
+#+BEGIN_SRC emacs-lisp
+  (use-package lsp-mode
+    :ensure t
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+           (cc-mode . lsp-deferred))
+           ;; if you want which-key integration
+           ;(lsp-mode . lsp-enable-which-key-integration))
+    :commands (lsp lsp-deferred))
+
+;  (setq lsp-clients-clangd-executable "/usr/local/opt/llvm/bin/clangd")
+;  (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=info" "-pretty" "-resource-dir=/Applications/Xcode9.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0"))
+
+  ;; optionally
+  (use-package lsp-ui :commands lsp-ui-mode)
+  (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+
+  ;; optionally if you want to use debugger
+  ;(use-package dap-mode)
+  ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+      (setq dap-lldb-debug-program `(,(expand-file-name "~/.vscode/extensions/lanza.lldb-vscode-0.2.3/bin/darwin/bin/lldb-vscode")))
+#+END_SRC
+
+** C/C++
+#+BEGIN_SRC emacs-lisp
+    (use-package cc-mode
+  :init
+       (add-hook 'cc-mode-hook (lambda () (c-set-style "stroustrup")))
+    )
+       (setq-default indent-tabs-mode nil)
+       (setq c-basic-offset 4)
+#+END_SRC
+
+** C++ debugging
+
+#+BEGIN_SRC emacs-lisp :tangle no
+    (use-package dap-mode
+      :defer
+      :custom
+      (dap-auto-configure-mode t                           "Automatically configure dap.")
+      (dap-auto-configure-features
+       '(sessions locals breakpoints expressions tooltip)  "Remove the button panel in the top.")
+      :config
+      ;;; dap for c++
+      (require 'dap-lldb)
+
+        ;;; set the debugger executable (c++)
+      (setq dap-lldb-debug-program `(,(expand-file-name "~/.vscode/extensions/lanza.lldb-vscode-0.2.3/bin/darwin/bin/lldb-vscode")))
+
+        ;;; ask user for executable to debug if not specified explicitly (c++)
+;      (setq dap-lldb-debugged-program-function (lambda () (read-file-name "Select file to debug.")))
+
+        ;;; default debug template for (c++)
+        (dap-register-debug-template
+         "C++ LLDB dap"
+         (list :type "lldb-vscode"
+               :cwd nil
+               :args nil
+               :request "launch"
+               :program nil))
+
+        (defun dap-debug-create-or-edit-json-template ()
+          "Edit the C++ debugging configuration or create + edit if none exists yet."
+          (interactive)
+          (let ((filename (concat (lsp-workspace-root) "/launch.json"))
+            (default "~/.emacs.d/default-launch.json"))
+            (unless (file-exists-p filename)
+          (copy-file default filename))
+            (find-file-existing filename))))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+** Flycheck
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :ensure t
+    :init
+    (global-flycheck-mode)
+    (add-hook 'c++-mode-hook
+              (lambda () (setq flycheck-clang-language-standard "c++17")))
+    :delight ""
+  )
+#+END_SRC
+** Nand 2 Tetris packages
+
+#+BEGIN_SRC emacs-lisp
+  (use-package nand2tetris
+  :ensure t
+  :init
+  (require 'nand2tetris)
+  (setq nand2tetris-core-base-dir "~/Development/nand2tetris")
+  (add-to-list 'auto-mode-alist '("\\.hdl" . nand2tetris-mode))
+  )
+#+END_SRC
+
+* Emacs Server
+
+#+BEGIN_SRC emacs-lisp
+(server-start)
+#+END_SRC
+
+* Post Initialisation
+Let's lower our GC thresholds back down to a sane level.
+
+#+BEGIN_SRC emacs-lisp
+(setq gc-cons-threshold 16777216
+      gc-cons-percentage 0.1)
+#+END_SRC
