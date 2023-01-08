@@ -51,9 +51,9 @@ Let's set some variables with basic user information.
       user-mail-address "eric@gwonk.com")
 #+end_src
 
-** Emacs Initialization
+* Emacs Initialization
 
-*** Settings
+** Settings
 We're going to increase the gc-cons-threshold to a very high number to decrease the load and compile time.
 We'll lower this value significantly after initialization has completed. We don't want to keep this value
 too high or it will result in long GC pauses during normal usage.
@@ -143,4 +143,47 @@ if you would like to see any and all byte compiler warnings.
   (require 'nano-theme-dark)
   (nano-theme-set-dark)
   (call-interactively 'nano-refresh-theme)
+#+end_src
+
+* Git
+
+** Enable git-gutter-fringe
+
+#+begin_src emacs-lisp
+  (use-package git-gutter-fringe
+    :ensure t
+    :init (setq git-gutter-fr:side 'right-fringe)
+    :config (global-git-gutter-mode t))
+#+end_src
+
+** git configuration file mode
+
+#+begin_src emacs-lisp
+  (use-package git-modes
+    :ensure t)
+#+end_src
+
+** Magit
+
+#+begin_src emacs-lisp
+  (use-package magit
+    :ensure t
+    :commands magit-status magit-blame magit-section
+    :init
+    (defadvice magit-status (around magit-fullscreen activate)
+      (window-configuration-to-register :magit-fullscreen)
+      ad-do-it
+      (delete-other-windows))
+    :config
+    (setq magit-branch-arguments nil
+          ;; use ido to look for branches
+          magit-completing-read-function 'magit-ido-completing-read
+          ;; don't put "origin-" in front of new branch names by default
+          magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
+          magit-push-always-verify nil
+          ;; Get rid of the previous advice to go into fullscreen
+          magit-restore-window-configuration t)
+  
+    :bind ("C-x g" . magit-status))
+
 #+end_src
