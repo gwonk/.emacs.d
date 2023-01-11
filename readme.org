@@ -14,7 +14,7 @@ This is an Emacs literate configuration template. It contains the basic structur
 of a literate config along with some optimizations to ensure a fast load time.
 
 This was originally authored by Andrés Ejmson and titled [[https://github.com/frap/emacs-literate][Atea Emacs
-Literate Configuration]].  
+Literate Configuration]].
 
 ** Org File Tweaks
 There are a few tweaks included in this org file that make it a little easier to
@@ -27,21 +27,23 @@ First there is a property defined on the file:
 header-args :tangle yes
 #+end_src
 
-This tells emacs to automatically tangle (include) all code blocks in this file when
-generating the code for the config, unless the code block explicitly includes
-=:tangle no= as the above code block does.
+This tells emacs to automatically tangle (include) all code blocks in
+this file when generating the code for the config, unless the code
+block explicitly includes =:tangle no= as the above code block does.
 
 *** Visibility Settings
-Next we have a property defined on the [[Configuration][Configuration]] heading that defines the visibility
-that tells org to show it's direct children on startup. This way a clean outline of all
-sub headings under Configuration is shown each time this file is opened in org-mode.
+Next we have a property defined on the [[Configuration][Configuration]] heading that
+defines the visibility that tells org to show it's direct children on
+startup. This way a clean outline of all sub headings under
+Configuration is shown each time this file is opened in org-mode.
 
 *** Table of Contents
-Finally, there is a [[Table of Contents][Table of Contents]] heading that includes the tag: =:TOC_3_gh:=. This
-tells an org-mode package =toc-org= to generate a table of contents under this heading
-that has a max depth of 3 and is created using Github-style hrefs. This table of contents
-is updated everytime the file is saved and makes for a functional table of contents that
-works property directly on github.
+Finally, there is a [[Table of Contents][Table of Contents]] heading that includes the tag:
+=:TOC_3_gh:=. This tells an org-mode package =toc-org= to generate a table
+of contents under this heading that has a max depth of 3 and is
+created using Github-style hrefs. This table of contents is updated
+everytime the file is saved and makes for a functional table of
+contents that works property directly on github.
 
 ** Personal Information
 Let's set some variables with basic user information.
@@ -54,9 +56,11 @@ Let's set some variables with basic user information.
 * Emacs Initialization
 
 ** Settings
-We're going to increase the gc-cons-threshold to a very high number to decrease the load and compile time.
-We'll lower this value significantly after initialization has completed. We don't want to keep this value
-too high or it will result in long GC pauses during normal usage.
+We're going to increase the gc-cons-threshold to a very high number to
+decrease the load and compile time.  We'll lower this value
+significantly after initialization has completed. We don't want to
+keep this value too high or it will result in long GC pauses during
+normal usage.
 
 #+begin_src emacs-lisp
 (eval-and-compile
@@ -64,11 +68,13 @@ too high or it will result in long GC pauses during normal usage.
         gc-cons-percentage 0.6))
 #+end_src
 
-Disable certain byte compiler warnings to cut down on the noise. This is a personal choice and can be removed
-if you would like to see any and all byte compiler warnings.
+Disable certain byte compiler warnings to cut down on the noise. This
+is a personal choice and can be removed if you would like to see any
+and all byte compiler warnings.
 
 #+begin_src emacs-lisp
-(setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+  (setq byte-compile-warnings
+        '(not free-vars unresolved noruntime lexical make-local))
 #+end_src
 
 ** Integrate with use-package
@@ -145,6 +151,52 @@ if you would like to see any and all byte compiler warnings.
   (call-interactively 'nano-refresh-theme)
 #+end_src
 
+* Display
+
+** Whitespace
+
+Don't use tab characters and indent 4 chars
+
+#+begin_src emacs-lisp
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
+#+end_src
+
+Require a newline at the end of file
+
+#+begin_src emacs-lisp
+  (setq require-final-newline t)
+#+end_src
+
+Delete selection
+
+#+begin_src emacs-lisp
+(delete-selection-mode t)
+#+end_src
+
+Highlight whitespace in buffer
+
+#+begin_src emacs-lisp
+  (use-package whitespace
+    :bind ("C-c T w" . whitespace-mode)
+    :delight " 🗒️"
+    :init
+     (setq whitespace-line-column nil
+            whitespace-display-mappings '((space-mark 32 [183] [46])
+                                             (newline-mark 10 [9166 10])
+                                             (tab-mark 9 [9654 9] [92 9])))
+    ;(dolist (hook '(prog-mode-hook text-mode-hook))
+    ;  (add-hook hook #'whitespace-mode))
+    (add-hook 'before-save-hook #'whitespace-cleanup)
+    :config
+    (setq whitespace-line-column 80) ;; limit line length
+    (setq whitespace-style '(face tabs empty trailing lines-tail))
+    (set-face-attribute 'whitespace-space       nil :foreground "#666666" :background nil)
+    (set-face-attribute 'whitespace-newline     nil :foreground "#666666" :background nil)
+    (set-face-attribute 'whitespace-indentation nil :foreground "#666666" :background nil)
+  )
+#+end_src
+
 * Git
 
 ** Enable git-gutter-fringe
@@ -160,6 +212,15 @@ if you would like to see any and all byte compiler warnings.
 
 #+begin_src emacs-lisp
   (use-package git-modes
+    :ensure t)
+#+end_src
+
+** git blame in a buffer
+
+Run mo-git-blame-current
+
+#+begin_src emacs-lisp :tangle no
+  (use-package mo-git-blame
     :ensure t)
 #+end_src
 
@@ -183,7 +244,69 @@ if you would like to see any and all byte compiler warnings.
           magit-push-always-verify nil
           ;; Get rid of the previous advice to go into fullscreen
           magit-restore-window-configuration t)
-  
+
     :bind ("C-x g" . magit-status))
 
+#+end_src
+
+* Completion Frameworks
+
+** Vertico
+
+#+begin_src emacs-lisp
+  ;; Enable vertico
+  (use-package vertico
+    :init
+    (vertico-mode)
+
+    ;; Different scroll margin
+    ;; (setq vertico-scroll-margin 0)
+
+    ;; Show more candidates
+    ;; (setq vertico-count 20)
+
+    ;; Grow and shrink the Vertico minibuffer
+    ;; (setq vertico-resize t)
+
+    ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+    ;; (setq vertico-cycle t)
+    )
+
+  ;; Optionally use the `orderless' completion style. See
+  ;; `+orderless-dispatch' in the Consult wiki for an advanced Orderless style
+  ;; dispatcher. Additionally enable `partial-completion' for file path
+  ;; expansion. `partial-completion' is important for wildcard support.
+  ;; Multiple files can be opened at once with `find-file' if you enter a
+  ;; wildcard. You may also give the `initials' completion style a try.
+  (use-package orderless
+    :init
+    ;; Configure a custom style dispatcher (see the Consult wiki)
+    ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+    ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+    (setq completion-styles '(orderless)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion)))))
+
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :init
+    (savehist-mode))
+#+end_src
+
+** Marginalia
+
+#+begin_src emacs-lisp
+  ;; Enable richer annotations using the Marginalia package
+  (use-package marginalia
+    ;; Either bind `marginalia-cycle` globally or only in the minibuffer
+    :bind (("M-A" . marginalia-cycle)
+           :map minibuffer-local-map
+           ("M-A" . marginalia-cycle))
+
+    ;; The :init configuration is always executed (Not lazy!)
+    :init
+
+    ;; Must be in the :init section of use-package such that the mode gets
+    ;; enabled right away. Note that this forces loading the package.
+    (marginalia-mode))
 #+end_src
