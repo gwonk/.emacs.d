@@ -30,27 +30,38 @@
   - [[#enable-dark-theme][Enable dark theme]]
 - [[#display][Display]]
   - [[#whitespace][Whitespace]]
-- [[#git][Git]]
-  - [[#enable-git-gutter-fringe][Enable git-gutter-fringe]]
-  - [[#git-configuration-file-mode][git configuration file mode]]
-  - [[#git-blame-in-a-buffer][git blame in a buffer]]
-  - [[#magit][Magit]]
+- [[#wordsmithing][Wordsmithing]]
+  - [[#configure-text-encoding][Configure text encoding]]
+  - [[#hippie-expand][Hippie expand]]
+  - [[#flyspell][Flyspell]]
+  - [[#dictionary][Dictionary]]
+  - [[#fill-mode][Fill mode]]
 - [[#completion-frameworks][Completion Frameworks]]
   - [[#vertico][Vertico]]
   - [[#marginalia][Marginalia]]
   - [[#consult][Consult]]
 - [[#eshell][EShell]]
+- [[#git][Git]]
+  - [[#enable-git-gutter-fringe][Enable git-gutter-fringe]]
+  - [[#git-configuration-file-mode][git configuration file mode]]
+  - [[#git-blame-in-a-buffer][git blame in a buffer]]
+  - [[#magit][Magit]]
 - [[#programming][Programming]]
   - [[#eldoc][ElDoc]]
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
+- [[#misc-helpful-settings][Misc helpful settings]]
+  - [[#which-key][Which-key]]
+  - [[#auto-revert-mode][Auto-revert mode]]
+- [[#post-initialization][Post Initialization]]
 
 ** About this file
 This is an Emacs literate configuration template. It contains the basic structure
 of a literate config along with some optimizations to ensure a fast load time.
 
-This was originally authored by Andrés Ejmson and titled [[https://github.com/frap/emacs-literate][Atea Emacs
-Literate Configuration]].
+I started with the files authored by Andrés Ejmson and titled [[https://github.com/frap/emacs-literate][Atea Emacs
+Literate Configuration]].  This version has been almost complete rebuilt
+with the move to using nano-emacs
 
 ** Org File Tweaks
 There are a few tweaks included in this org file that make it a little easier to
@@ -233,56 +244,70 @@ Highlight whitespace in buffer
   )
 #+end_src
 
-* Git
+* Wordsmithing
 
-** Enable git-gutter-fringe
+Text editing options
 
-#+begin_src emacs-lisp
-  (use-package git-gutter-fringe
-    :ensure t
-    :init (setq git-gutter-fr:side 'right-fringe)
-    :config (global-git-gutter-mode t))
-#+end_src
-
-** git configuration file mode
+** Configure text encoding
 
 #+begin_src emacs-lisp
-  (use-package git-modes
-    :ensure t)
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
 #+end_src
 
-** git blame in a buffer
-
-Run mo-git-blame-current
-
-#+begin_src emacs-lisp :tangle no
-  (use-package mo-git-blame
-    :ensure t)
-#+end_src
-
-** Magit
+** Hippie expand
 
 #+begin_src emacs-lisp
-  (use-package magit
-    :ensure t
-    :commands magit-status magit-blame magit-section
-    :init
-    (defadvice magit-status (around magit-fullscreen activate)
-      (window-configuration-to-register :magit-fullscreen)
-      ad-do-it
-      (delete-other-windows))
+  (setq hippie-expand-try-functions-list '(try-expand-dabbrev
+                                           try-expand-dabbrev-all-buffers
+                                           try-expand-dabbrev-from-kill
+                                           try-complete-file-name-partially
+                                           try-complete-file-name
+                                           try-expand-all-abbrevs
+                                           try-expand-list
+                                           try-expand-line
+                                           try-complete-lisp-symbol-partially
+                                           try-complete-lisp-symbol))
+
+  ;; use hippie-expand instead of dabbrev
+  (global-set-key (kbd "M-/") #'hippie-expand)
+  (global-set-key (kbd "s-/") #'hippie-expand)
+#+end_src
+
+** Flyspell
+
+#+begin_src emacs-lisp
+  (use-package flyspell
     :config
-    (setq magit-branch-arguments nil
-          ;; use ido to look for branches
-          magit-completing-read-function 'magit-ido-completing-read
-          ;; don't put "origin-" in front of new branch names by default
-          magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
-          magit-push-always-verify nil
-          ;; Get rid of the previous advice to go into fullscreen
-          magit-restore-window-configuration t)
+      (when (eq system-type 'windows-nt)
+        (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
+      (setq ispell-program-name "aspell" ; use aspell instead of ispell
+           ispell-extra-args '("--sug-mode=ultra"))
+      (add-hook 'text-mode-hook #'flyspell-mode)
+      (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+    :delight "")
+#+end_src
 
-    :bind ("C-x g" . magit-status))
+** Dictionary
 
+As suggested in [[https://irreal.org/blog/?p=10824][Webster 1913 and dictionary.el]]
+
+#+begin_src emacs-lisp
+  (setq dictionary-server "dict.org")
+#+end_src
+
+** Fill mode
+
+Automatically wrap text.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+      :bind (("C-c T f" . auto-fill-mode)
+             ("C-c T t" . toggle-truncate-lines))
+      :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
+      :diminish auto-fill-mode)
 #+end_src
 
 * Completion Frameworks
@@ -350,125 +375,127 @@ Run mo-git-blame-current
 ** Consult
 
 #+begin_src emacs-lisp
-    ;; Example configuration for Consult
-    (use-package consult
-      ;; Replace bindings. Lazily loaded due by `use-package'.
-      :bind (;; C-c bindings (mode-specific-map)
-             ("C-c h" . consult-history)
-             ("C-c m" . consult-mode-command)
-             ("C-c b" . consult-bookmark)
-             ("C-c k" . consult-kmacro)
-             ;; C-x bindings (ctl-x-map)
-             ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-             ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-             ("C-x C-b" . consult-buffer)                ;; orig. switch-to-buffer
-             ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-             ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-             ;; Custom M-# bindings for fast register access
-             ("M-#" . consult-register-load)
-             ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-             ("C-M-#" . consult-register)
-             ;; Other custom bindings
-             ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-             ("<help> a" . consult-apropos)            ;; orig. apropos-command
-             ;; M-g bindings (goto-map)
-             ("M-g e" . consult-compile-error)
-             ("M-g f" . consult-flycheck)               ;; Alternative: consult-flymake
-             ("M-g g" . consult-goto-line)             ;; orig. goto-line
-             ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-             ("M-g o" . consult-org-heading)               ;; Alternative: consult-outline
-             ("M-g a" . consult-org-agenda)
+  ;; Example configuration for Consult
+  (use-package consult
+    ;; Replace bindings. Lazily loaded due by `use-package'.
+    :bind (;; C-c bindings (mode-specific-map)
+           ("C-c h" . consult-history)
+           ("C-c m" . consult-mode-command)
+           ("C-c b" . consult-bookmark)
+           ("C-c k" . consult-kmacro)
+           ;; C-x bindings (ctl-x-map)
+           ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+           ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+           ("C-x C-b" . consult-buffer)                ;; orig. switch-to-buffer
+           ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+           ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+           ;; Custom M-# bindings for fast register access
+           ("M-#" . consult-register-load)
+           ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+           ("C-M-#" . consult-register)
+           ;; Other custom bindings
+           ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+           ("<help> a" . consult-apropos)            ;; orig. apropos-command
+           ;; M-g bindings (goto-map)
+           ("M-g e" . consult-compile-error)
+           ("M-g f" . consult-flycheck)               ;; Alternative: consult-flymake
+           ("M-g g" . consult-goto-line)             ;; orig. goto-line
+           ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+           ("M-g o" . consult-org-heading)               ;; Alternative: consult-outline
+           ("M-g a" . consult-org-agenda)
 
-             ("M-g m" . consult-mark)
-             ("M-g k" . consult-global-mark)
-             ("M-g i" . consult-imenu)
-             ("M-g I" . consult-imenu-multi)
-             ;; M-s bindings (search-map)
-             ("M-s f" . consult-find)
-             ("M-s F" . consult-locate)
-             ("M-s g" . consult-grep)
-             ("M-s G" . consult-git-grep)
-             ("M-s r" . consult-ripgrep)
-             ("M-s l" . consult-line)
-             ("M-s L" . consult-line-multi)
-             ("M-s m" . consult-multi-occur)
-             ("M-s k" . consult-keep-lines)
-             ("M-s u" . consult-focus-lines)
-             ;; Isearch integration
-             ("M-s e" . consult-isearch-history)
-             :map isearch-mode-map
-             ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
-             ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
-             ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-             ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
+           ("M-g m" . consult-mark)
+           ("M-g k" . consult-global-mark)
+           ("M-g i" . consult-imenu)
+           ("M-g I" . consult-imenu-multi)
+           ;; M-s bindings (search-map)
+           ("M-s f" . consult-find)
+           ("M-s F" . consult-locate)
+           ("M-s g" . consult-grep)
+           ("M-s G" . consult-git-grep)
+           ("M-s r" . consult-ripgrep)
+           ("M-s l" . consult-line)
+           ("M-s L" . consult-line-multi)
+           ("M-s m" . consult-multi-occur)
+           ("M-s k" . consult-keep-lines)
+           ("M-s u" . consult-focus-lines)
+           ;; Isearch integration
+           ("M-s e" . consult-isearch-history)
+           :map isearch-mode-map
+           ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+           ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+           ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+           ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 
-      ;; Enable automatic preview at point in the *Completions* buffer. This is
-      ;; relevant when you use the default completion UI. You may want to also
-      ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
-      :hook (completion-list-mode . consult-preview-at-point-mode)
+    ;; Enable automatic preview at point in the *Completions* buffer. This is
+    ;; relevant when you use the default completion UI. You may want to also
+    ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
+    :hook (completion-list-mode . consult-preview-at-point-mode)
 
-      ;; The :init configuration is always executed (Not lazy)
-      :init
+    ;; The :init configuration is always executed (Not lazy)
+    :init
 
-      ;; Optionally configure the register formatting. This improves the register
-      ;; preview for `consult-register', `consult-register-load',
-      ;; `consult-register-store' and the Emacs built-ins.
-      (setq register-preview-delay 0
-            register-preview-function #'consult-register-format)
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0
+          register-preview-function #'consult-register-format)
 
-      ;; Optionally tweak the register preview window.
-      ;; This adds thin lines, sorting and hides the mode line of the window.
-      (advice-add #'register-preview :override #'consult-register-window)
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
 
-      ;; Optionally replace `completing-read-multiple' with an enhanced version.
-      (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+    ;; Optionally replace `completing-read-multiple' with an enhanced version.
+    (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
 
-      ;; Use Consult to select xref locations with preview
-      (setq xref-show-xrefs-function #'consult-xref
-            xref-show-definitions-function #'consult-xref)
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
 
-      ;; Configure other variables and modes in the :config section,
-      ;; after lazily loading the package.
-      :config
+    ;; Configure other variables and modes in the :config section,
+    ;; after lazily loading the package.
+    :config
 
-      ;; Optionally configure preview. The default value
-      ;; is 'any, such that any key triggers the preview.
-      ;; (setq consult-preview-key 'any)
-      ;; (setq consult-preview-key (kbd "M-."))
-      ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
-      ;; For some commands and buffer sources it is useful to configure the
-      ;; :preview-key on a per-command basis using the `consult-customize' macro.
-      (consult-customize
-       consult-theme
-       :preview-key '(:debounce 0.2 any)
-       consult-ripgrep consult-git-grep consult-grep
-       consult-bookmark consult-recent-file consult-xref
-       consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
-       :preview-key (kbd "M-."))
+    ;; Optionally configure preview. The default value
+    ;; is 'any, such that any key triggers the preview.
+    ;; (setq consult-preview-key 'any)
+    ;; (setq consult-preview-key (kbd "M-."))
+    ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+    ;; For some commands and buffer sources it is useful to configure the
+    ;; :preview-key on a per-command basis using the `consult-customize' macro.
+    (consult-customize
+     consult-theme
+     :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file consult-xref
+     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+     :preview-key (kbd "M-."))
 
-      ;; Optionally configure the narrowing key.
-      ;; Both < and C-+ work reasonably well.
-      (setq consult-narrow-key "<") ;; (kbd "C-+")
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (setq consult-narrow-key "<") ;; (kbd "C-+")
 
-      ;; Optionally make narrowing help available in the minibuffer.
-      ;; You may want to use `embark-prefix-help-command' or which-key instead.
-      ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+    ;; Optionally make narrowing help available in the minibuffer.
+    ;; You may want to use `embark-prefix-help-command' or which-key instead.
+    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-      ;; Optionally configure a function which returns the project root directory.
-      ;; There are multiple reasonable alternatives to chose from.
-      ;;;; 1. project.el (project-roots)
-      (setq consult-project-root-function
-            (lambda ()
-              (when-let (project (project-current))
-                (car (project-roots project)))))
-      ;;;; 2. projectile.el (projectile-project-root)
-      ;; (autoload 'projectile-project-root "projectile")
-      ;; (setq consult-project-root-function #'projectile-project-root)
-      ;;;; 3. vc.el (vc-root-dir)
-      ;; (setq consult-project-root-function #'vc-root-dir)
-      ;;;; 4. locate-dominating-file
-      ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
+    ;; Optionally configure a function which returns the project root directory.
+    ;; There are multiple reasonable alternatives to chose from.
+    ;;;; 1. project.el (project-roots)
+    (setq consult-project-root-function
+          (lambda ()
+            (when-let (project (project-current))
+              (car (project-roots project)))))
+    ;;;; 2. projectile.el (projectile-project-root)
+    ;; (autoload 'projectile-project-root "projectile")
+    ;; (setq consult-project-root-function #'projectile-project-root)
+    ;;;; 3. vc.el (vc-root-dir)
+    ;; (setq consult-project-root-function #'vc-root-dir)
+    ;;;; 4. locate-dominating-file
+    ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
     )
+  (use-package consult-flycheck
+    :ensure t)
 #+end_src
 
 * EShell
@@ -494,6 +521,57 @@ Start the eshell and bind f12 to the swap function.
     (global-set-key [f12] 'ejm-shell))
 #+end_src
 
+* Git
+
+** Enable git-gutter-fringe
+
+#+begin_src emacs-lisp
+  (use-package git-gutter-fringe
+    :ensure t
+    :init (setq git-gutter-fr:side 'right-fringe)
+    :config (global-git-gutter-mode t))
+#+end_src
+
+** git configuration file mode
+
+#+begin_src emacs-lisp
+  (use-package git-modes
+    :ensure t)
+#+end_src
+
+** git blame in a buffer
+
+Run mo-git-blame-current
+
+#+begin_src emacs-lisp :tangle no
+  (use-package mo-git-blame
+    :ensure t)
+#+end_src
+
+** Magit
+
+#+begin_src emacs-lisp
+  (use-package magit
+    :ensure t
+    :commands magit-status magit-blame magit-section
+    :init
+    (defadvice magit-status (around magit-fullscreen activate)
+      (window-configuration-to-register :magit-fullscreen)
+      ad-do-it
+      (delete-other-windows))
+    :config
+    (setq magit-branch-arguments nil
+          ;; use ido to look for branches
+          magit-completing-read-function 'magit-ido-completing-read
+          ;; don't put "origin-" in front of new branch names by default
+          magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
+          magit-push-always-verify nil
+          ;; Get rid of the previous advice to go into fullscreen
+          magit-restore-window-configuration t)
+
+    :bind ("C-x g" . magit-status))
+
+#+end_src
 * Programming
 
 ** ElDoc
@@ -511,4 +589,33 @@ Start the eshell and bind f12 to the swap function.
   (use-package toc-org
     :after org
     :init (add-hook 'org-mode-hook #'toc-org-enable))
+#+end_src
+
+
+* Misc helpful settings
+
+** Which-key
+
+#+begin_src emacs-lisp
+  (use-package which-key
+    :ensure t
+    :init
+    (which-key-mode +1))
+#+end_src
+
+** Auto-revert mode
+
+Revert buffers automatically when the underlying files change.
+
+#+begin_src emacs-lisp
+  (global-auto-revert-mode t)
+#+end_src
+
+* Post Initialization
+
+Reset GC thresholds to more reasonable numbers.
+
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold 16777216
+        gc-cons-percentage 0.1)
 #+end_src
