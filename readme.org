@@ -50,6 +50,7 @@
   - [[#eldoc][ElDoc]]
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
+- [[#mastodon][Mastodon]]
 - [[#misc-helpful-settings][Misc helpful settings]]
   - [[#which-key][Which-key]]
   - [[#auto-revert-mode][Auto-revert mode]]
@@ -591,6 +592,16 @@ Run mo-git-blame-current
     :init (add-hook 'org-mode-hook #'toc-org-enable))
 #+end_src
 
+* Mastodon
+
+#+begin_src emacs-lisp
+  (use-package mastodon
+    :ensure t
+    :config
+    (mastodon-discover)
+    (setq mastodon-instance-url "https://nutmeg.social"
+          mastodon-active-user "gwonk"))
+#+end_src
 
 * Misc helpful settings
 
