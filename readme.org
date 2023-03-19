@@ -502,7 +502,12 @@ Automatically wrap text.
     ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
     )
   (use-package consult-flycheck
-    :ensure t)
+    :ensure t
+    :custom
+    (set-face-attribute 'flycheck-posframe-error-face
+                        nil
+                        :inherit nil
+                        :foreground "red"))
 #+end_src
 
 ** Company
@@ -647,7 +652,7 @@ Run mo-git-blame-current
     (rustic-cargo-run)
     (let (
           (orig-win (selected-window))
-          (run-win (display-buffer (get-buffer "*cargo-run*") nil 'visible))
+          (run-win (display-buffer (get-buffer "**cargo-run**") nil 'visible))
           )
       (select-window run-win)
       (comint-mode)
