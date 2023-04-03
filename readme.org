@@ -53,6 +53,9 @@
     - [[#rustic][Rustic]]
     - [[#lsp-mode][lsp-mode]]
     - [[#flycheck][flycheck]]
+  - [[#cc][C/C++]]
+  - [[#c-debugging][C++ debugging]]
+  - [[#flycheck-1][Flycheck]]
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
 - [[#mastodon][Mastodon]]
@@ -695,8 +698,70 @@ Run mo-git-blame-current
 
 *** flycheck
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package flycheck :ensure)
+#+end_src
+
+** C/C++
+#+begin_src emacs-lisp
+  (use-package cc-mode
+    :init
+    (add-hook 'cc-mode-hook (lambda () (c-set-style "stroustrup"))))
+  (setq-default indent-tabs-mode nil)
+  (setq c-basic-offset 4)
+  (add-hook 'c-mode-hook 'lsp)
+  (add-hook 'c++mode-hook 'lsp)
+#+end_src
+
+** C++ debugging
+
+#+begin_src emacs-lisp :tangle no
+  (use-package dap-mode
+    :defer
+    :custom
+    (dap-auto-configure-mode t                           "Automatically configure dap.")
+    (dap-auto-configure-features
+     '(sessions locals breakpoints expressions tooltip)  "Remove the button panel in the top.")
+    :config
+        ;;; dap for c++
+    (require 'dap-lldb)
+
+          ;;; set the debugger executable (c++)
+    (setq dap-lldb-debug-program
+          `(,(expand-file-name "~/.vscode/extensions/lanza.lldb-vscode-0.2.3/bin/darwin/bin/lldb-vscode")))
+
+    ;;; ask user for executable to debug if not specified explicitly (c++)
+  ;      (setq dap-lldb-debugged-program-function (lambda () (read-file-name "Select file to debug.")))
+
+    ;;; default debug template for (c++)
+    (dap-register-debug-template
+     "C++ LLDB dap"
+     (list :type "lldb-vscode"
+           :cwd nil
+           :args nil
+           :request "launch"
+           :program nil))
+
+    (defun dap-debug-create-or-edit-json-template ()
+      "Edit the C++ debugging configuration or create + edit if none exists yet."
+      (interactive)
+      (let ((filename (concat (lsp-workspace-root) "/launch.json"))
+            (default "~/.emacs.d/default-launch.json"))
+        (unless (file-exists-p filename)
+          (copy-file default filename))
+        (find-file-existing filename))))
+#+end_src
+
+** Flycheck
+
+#+begin_src emacs-lisp
+  (use-package flycheck
+    :ensure t
+    :init
+    (global-flycheck-mode)
+    (add-hook 'c++-mode-hook
+              (lambda () (setq flycheck-clang-language-standard "c++17")))
+    :delight "")
 #+end_src
 
 * Org mode
