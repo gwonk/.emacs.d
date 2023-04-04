@@ -706,11 +706,13 @@ Run mo-git-blame-current
 #+begin_src emacs-lisp
   (use-package cc-mode
     :init
-    (add-hook 'cc-mode-hook (lambda () (c-set-style "stroustrup"))))
-  (setq-default indent-tabs-mode nil)
-  (setq c-basic-offset 4)
-  (add-hook 'c-mode-hook 'lsp)
-  (add-hook 'c++mode-hook 'lsp)
+    (add-hook 'c++-mode-hook 'ejm/cc-mode-hook))
+
+  (defun ejm/cc-mode-hook ()
+    (lsp)
+    (c-set-style "stroustrup")
+    (setq-default indent-tabs-mode nil)
+    (setq c-basic-offset 4))
 #+end_src
 
 ** C++ debugging
