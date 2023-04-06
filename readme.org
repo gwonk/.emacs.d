@@ -694,6 +694,9 @@ Run mo-git-blame-current
     (lsp-ui-peek-always-show t)
     (lsp-ui-sideline-show-hover t)
     (lsp-ui-doc-enable nil))
+
+  (straight-use-package
+   '(consult-lsp :type git :host github :repo "gagbo/consult-lsp"))
 #+end_src
 
 *** flycheck
@@ -710,6 +713,7 @@ Run mo-git-blame-current
 
   (defun ejm/cc-mode-hook ()
     (lsp)
+    (define-key lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
     (c-set-style "stroustrup")
     (setq-default indent-tabs-mode nil)
     (setq c-basic-offset 4))
@@ -807,7 +811,7 @@ Revert buffers automatically when the underlying files change.
 #+end_src
 
 * MacOS
-MacOS Customisations
+MacOS Customizations
 #+begin_src emacs-lisp
   (straight-use-package
    '(exec-path-from-shell
@@ -821,6 +825,8 @@ MacOS Customisations
     ;; fix exec-path
     (when (memq window-system '(mac ns x))
       (exec-path-from-shell-initialize)))
+  (when is-mac
+    (setq mac-option-modifier 'super))
 #+end_src
 
 * Post Initialization
