@@ -36,6 +36,7 @@
   - [[#flyspell][Flyspell]]
   - [[#dictionary][Dictionary]]
   - [[#fill-mode][Fill mode]]
+  - [[#dashboard][Dashboard]]
 - [[#completion-frameworks][Completion Frameworks]]
   - [[#vertico][Vertico]]
   - [[#marginalia][Marginalia]]
@@ -58,6 +59,7 @@
   - [[#flycheck-1][Flycheck]]
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
+  - [[#kanban][Kanban]]
 - [[#mastodon][Mastodon]]
 - [[#misc-helpful-settings][Misc helpful settings]]
   - [[#which-key][Which-key]]
@@ -318,6 +320,23 @@ Automatically wrap text.
              ("C-c T t" . toggle-truncate-lines))
       :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
       :diminish auto-fill-mode)
+#+end_src
+
+** Dashboard
+
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :preface
+    (defun ejm/dashboard-banner ()
+      "Set a dashboard banner including information on package initialization time and garbage collection."
+      (setq dashboard-banner-logo-title
+            (format "Emace ready in %.2f seconds with %d garbage collections."
+                    (float-time (time-subtract after-init-time before-init-time)) gcs-done)))
+    :config
+    (setq dashboard-startup-banner 'logo)
+    (dashboard-setup-startup-hook)
+    :hook ((after-init      . dashboard-refresh-buffer)
+           (dashboard-mode  . ejm/dashboard-banner)))
 #+end_src
 
 * Completion Frameworks
@@ -708,15 +727,16 @@ Run mo-git-blame-current
 ** C/C++
 #+begin_src emacs-lisp
   (use-package cc-mode
+    :preface
+    (defun ejm/cc-mode-hook ()
+      (lsp)
+      (define-key lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
+      (c-set-style "stroustrup")
+      (setq-default indent-tabs-mode nil)
+      (setq c-basic-offset 4))
+
     :init
     (add-hook 'c++-mode-hook 'ejm/cc-mode-hook))
-
-  (defun ejm/cc-mode-hook ()
-    (lsp)
-    (define-key lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
-    (c-set-style "stroustrup")
-    (setq-default indent-tabs-mode nil)
-    (setq c-basic-offset 4))
 #+end_src
 
 ** C++ debugging
@@ -778,6 +798,14 @@ Run mo-git-blame-current
   (use-package toc-org
     :after org
     :init (add-hook 'org-mode-hook #'toc-org-enable))
+#+end_src
+
+** Kanban
+
+#+begin_src emacs-lisp
+  (use-package org-kanban
+    :after org
+    :ensure t)
 #+end_src
 
 * Mastodon
