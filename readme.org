@@ -18,16 +18,6 @@
 - [[#emacs-initialization][Emacs Initialization]]
   - [[#settings][Settings]]
   - [[#integrate-with-use-package][Integrate with use-package]]
-- [[#configure-nano][Configure nano]]
-  - [[#install-nano-and-its-dependencies][Install nano and its dependencies]]
-  - [[#setup-fonts][Setup fonts]]
-  - [[#load-the-nano-layout][Load the nano layout]]
-  - [[#set-up-nano-font-faces][Set up nano font faces]]
-  - [[#set-up-the-nano-theme][Set up the nano theme]]
-  - [[#load-nano-defaults][Load nano defaults]]
-  - [[#enable-nano-session-handling][Enable nano session handling]]
-  - [[#enable-the-nano-modeline][Enable the nano modeline]]
-  - [[#enable-dark-theme][Enable dark theme]]
 - [[#display][Display]]
   - [[#whitespace][Whitespace]]
 - [[#wordsmithing][Wordsmithing]]
@@ -63,6 +53,7 @@
 - [[#mastodon][Mastodon]]
 - [[#misc-helpful-settings][Misc helpful settings]]
   - [[#which-key][Which-key]]
+  - [[#save-history][Save History]]
   - [[#auto-revert-mode][Auto-revert mode]]
 - [[#macos][MacOS]]
 - [[#post-initialization][Post Initialization]]
@@ -139,75 +130,15 @@ and all byte compiler warnings.
 ** Integrate with use-package
 
 #+begin_src emacs-lisp
-  (straight-use-package 'use-package)
+  ;; Install use-package support
+  (elpaca elpaca-use-package
+    ;; Enable :elpaca use-package keyword.
+    (elpaca-use-package-mode)
+    ;; Assume :elpaca t unless otherwise specified.
+    (setq elpaca-use-package-by-default t))
 
-  (use-package straight
-    :custom
-    (straight-use-package-by-default t))
-#+end_src
-
-* Configure nano
-
-** Install nano and its dependencies
-
-#+begin_src emacs-lisp
-  (straight-use-package
-   '(nano-emacs :type git :host github :repo "rougier/nano-emacs"))
-#+end_src
-
-** Setup fonts
-
-#+begin_src emacs-lisp
-  (setq nano-font-family-monospaced "Input Mono Narrow")
-  (setq nano-font-family-proportional nil)
-  (setq nano-font-size 14)
-  ;(set-frame-font "Input Mono Narrow-14")
-#+end_src
-
-** Load the nano layout
-
-#+begin_src emacs-lisp
-  (require 'nano-layout)
-#+end_src
-
-** Set up nano font faces
-
-#+begin_src emacs-lisp
-  (require 'nano-faces)
-  (nano-faces)
-#+end_src
-
-** Set up the nano theme
-
-#+begin_src emacs-lisp
-  (require 'nano-theme)
-  (nano-theme)
-#+end_src
-
-** Load nano defaults
-
-#+begin_src emacs-lisp
-  (require 'nano-defaults)
-#+end_src
-
-** Enable nano session handling
-
-#+begin_src emacs-lisp
-  (require 'nano-session)
-#+end_src
-
-** Enable the nano modeline
-
-#+begin_src emacs-lisp
-  (require 'nano-modeline)
-#+end_src
-
-** Enable dark theme
-
-#+begin_src emacs-lisp
-  (require 'nano-theme-dark)
-  (nano-theme-set-dark)
-  (call-interactively 'nano-refresh-theme)
+  ;; Block until current queue processed.
+  (elpaca-wait)
 #+end_src
 
 * Display
@@ -231,29 +162,6 @@ Delete selection
 
 #+begin_src emacs-lisp
 (delete-selection-mode t)
-#+end_src
-
-Highlight whitespace in buffer
-
-#+begin_src emacs-lisp
-  (use-package whitespace
-    :bind ("C-c T w" . whitespace-mode)
-    :delight " 🗒️"
-    :init
-     (setq whitespace-line-column nil
-            whitespace-display-mappings '((space-mark 32 [183] [46])
-                                             (newline-mark 10 [9166 10])
-                                             (tab-mark 9 [9654 9] [92 9])))
-    ;(dolist (hook '(prog-mode-hook text-mode-hook))
-    ;  (add-hook hook #'whitespace-mode))
-    (add-hook 'before-save-hook #'whitespace-cleanup)
-    :config
-    (setq whitespace-line-column 80) ;; limit line length
-    (setq whitespace-style '(face tabs empty trailing lines-tail))
-    (set-face-attribute 'whitespace-space       nil :foreground "#666666" :background nil)
-    (set-face-attribute 'whitespace-newline     nil :foreground "#666666" :background nil)
-    (set-face-attribute 'whitespace-indentation nil :foreground "#666666" :background nil)
-  )
 #+end_src
 
 * Wordsmithing
@@ -292,6 +200,7 @@ Text editing options
 
 #+begin_src emacs-lisp
   (use-package flyspell
+    :elpaca nil
     :config
       (when (eq system-type 'windows-nt)
         (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
@@ -316,10 +225,11 @@ Automatically wrap text.
 
 #+begin_src emacs-lisp
   (use-package emacs
-      :bind (("C-c T f" . auto-fill-mode)
-             ("C-c T t" . toggle-truncate-lines))
-      :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
-      :diminish auto-fill-mode)
+    :elpaca nil
+    :bind (("C-c T f" . auto-fill-mode)
+           ("C-c T t" . toggle-truncate-lines))
+    :init (add-hook 'org-mode-hook 'turn-on-auto-fill)
+    :diminish auto-fill-mode)
 #+end_src
 
 ** Dashboard
@@ -335,8 +245,8 @@ Automatically wrap text.
     :config
     (setq dashboard-startup-banner 'logo)
     (dashboard-setup-startup-hook)
-    :hook ((after-init      . dashboard-refresh-buffer)
-           (dashboard-mode  . ejm/dashboard-banner)))
+    :hook ((elpaca-after-init . dashboard-refresh-buffer)
+           (dashboard-mode    . ejm/dashboard-banner)))
 #+end_src
 
 * Completion Frameworks
@@ -377,10 +287,6 @@ Automatically wrap text.
           completion-category-defaults nil
           completion-category-overrides '((file (styles partial-completion)))))
 
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :init
-    (savehist-mode))
 #+end_src
 
 ** Marginalia
@@ -487,18 +393,18 @@ Automatically wrap text.
 
     ;; Optionally configure preview. The default value
     ;; is 'any, such that any key triggers the preview.
-    ;; (setq consult-preview-key 'any)
+    (setq consult-preview-key 'any)
     ;; (setq consult-preview-key (kbd "M-."))
     ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
     ;; For some commands and buffer sources it is useful to configure the
     ;; :preview-key on a per-command basis using the `consult-customize' macro.
-    (consult-customize
-     consult-theme
-     :preview-key '(:debounce 0.2 any)
-     consult-ripgrep consult-git-grep consult-grep
-     consult-bookmark consult-recent-file consult-xref
-     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
-     :preview-key (kbd "M-."))
+    ;(consult-customize
+    ; consult-theme
+    ; :preview-key '(:debounce 0.2 any)
+    ; consult-ripgrep consult-git-grep consult-grep
+    ; consult-bookmark consult-recent-file consult-xref
+    ; consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+    ; :preview-key '(kbd "M-."))
 
     ;; Optionally configure the narrowing key.
     ;; Both < and C-+ work reasonably well.
@@ -555,6 +461,7 @@ Start the eshell and bind f12 to the swap function.
 
 #+begin_src emacs-lisp
   (use-package eshell
+    :elpaca nil
     :ensure t
     :config
     (defvar ejm-save-buffer "*scratch*"
@@ -714,8 +621,7 @@ Run mo-git-blame-current
     (lsp-ui-sideline-show-hover t)
     (lsp-ui-doc-enable nil))
 
-  (straight-use-package
-   '(consult-lsp :type git :host github :repo "gagbo/consult-lsp"))
+  (use-package consult-lsp)
 #+end_src
 
 *** flycheck
@@ -727,6 +633,7 @@ Run mo-git-blame-current
 ** C/C++
 #+begin_src emacs-lisp
   (use-package cc-mode
+    :elpaca nil
     :preface
     (defun ejm/cc-mode-hook ()
       (lsp)
@@ -830,6 +737,16 @@ Run mo-git-blame-current
     (which-key-mode +1))
 #+end_src
 
+** Save History
+
+#+begin_src emacs-lisp
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :elpaca nil
+    :init
+    (savehist-mode))
+#+end_src
+
 ** Auto-revert mode
 
 Revert buffers automatically when the underlying files change.
@@ -841,11 +758,13 @@ Revert buffers automatically when the underlying files change.
 * MacOS
 MacOS Customizations
 #+begin_src emacs-lisp
-  (straight-use-package
-   '(exec-path-from-shell
-     :type git
-     :host github
-     :repo "purcell/exec-path-from-shell"))
+  (use-package exec-path-from-shell
+    :config
+  ;(straight-use-package
+  ; '(exec-path-from-shell
+  ;   :type git
+  ;   :host github
+  ;   :repo "purcell/exec-path-from-shell"))
   ;; Are we on a mac?
   (setq is-mac (equal system-type 'darwin))
 
@@ -854,7 +773,8 @@ MacOS Customizations
     (when (memq window-system '(mac ns x))
       (exec-path-from-shell-initialize)))
   (when is-mac
-    (setq mac-option-modifier 'super))
+    (setq mac-command-modifier 'meta)
+    (setq mac-option-modifier 'super)))
 #+end_src
 
 * Post Initialization
