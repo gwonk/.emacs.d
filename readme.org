@@ -19,6 +19,7 @@
   - [[#settings][Settings]]
   - [[#integrate-with-use-package][Integrate with use-package]]
 - [[#display][Display]]
+  - [[#turn-stuff-off][Turn stuff off]]
   - [[#theme][Theme]]
   - [[#whitespace][Whitespace]]
 - [[#wordsmithing][Wordsmithing]]
@@ -42,13 +43,13 @@
   - [[#magit][Magit]]
 - [[#programming][Programming]]
   - [[#eldoc][ElDoc]]
+  - [[#lsp-mode][lsp-mode]]
   - [[#rust][Rust]]
     - [[#rustic][Rustic]]
-    - [[#lsp-mode][lsp-mode]]
-    - [[#flycheck][flycheck]]
   - [[#cc][C/C++]]
-  - [[#c-debugging][C++ debugging]]
-  - [[#flycheck-1][Flycheck]]
+  - [[#debugging-dap-mode][Debugging (dap-mode)]]
+  - [[#flycheck][Flycheck]]
+  - [[#typescript][Typescript]]
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
   - [[#kanban][Kanban]]
@@ -65,8 +66,8 @@ This is an Emacs literate configuration template. It contains the basic structur
 of a literate config along with some optimizations to ensure a fast load time.
 
 I started with the files authored by Andrés Ejmson and titled [[https://github.com/frap/emacs-literate][Atea Emacs
-Literate Configuration]].  This version has been almost complete rebuilt
-with the move to using nano-emacs
+Literate Configuration]].  This version has been almost complete
+rebuilt.  This branch is using the elpaca package manager.
 
 ** Org File Tweaks
 There are a few tweaks included in this org file that make it a little easier to
@@ -144,6 +145,20 @@ and all byte compiler warnings.
 #+end_src
 
 * Display
+
+** Turn stuff off
+
+#+begin_src emacs-lisp
+  (blink-cursor-mode -1)
+  (tool-bar-mode -1)
+  (setq scroll-margin 0
+        scroll-conservatively 100000
+        scroll-preserve-screen-position 1)
+
+  (line-number-mode t)
+  (column-number-mode t)
+  (size-indication-mode t)
+#+end_src
 
 ** Theme
 
@@ -585,6 +600,39 @@ Run mo-git-blame-current
   (use-package eldoc
     :defer t)
 #+end_src
+** lsp-mode
+
+#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :ensure
+    :commands lsp
+    :custom
+    ;; what to use when checking on-save. "check" is default, I prefer clippy
+    (lsp-rust-analyzer-cargo-watch-command "clippy")
+    (lsp-eldoc-render-all t)
+    (lsp-idle-delay 0.6)
+    ;; enable / disable the hints as you prefer:
+    (lsp-rust-analyzer-server-display-inlay-hints t)
+    (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+    (lsp-rust-analyzer-display-chaining-hints t)
+    (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+    (lsp-rust-analyzer-display-closure-return-type-hints t)
+    (lsp-rust-analyzer-display-parameter-hints nil)
+    (lsp-rust-analyzer-display-reborrow-hints nil)
+    :config
+    (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+
+  (use-package lsp-ui
+    :ensure
+    :commands lsp-ui-mode
+    :custom
+    (lsp-ui-peek-always-show t)
+    (lsp-ui-sideline-show-hover t)
+    (lsp-ui-doc-enable nil))
+
+  (use-package consult-lsp)
+#+end_src
+
 
 ** Rust
 
@@ -638,44 +686,6 @@ Run mo-git-blame-current
     )
 #+end_src
 
-*** lsp-mode
-
-#+begin_src emacs-lisp
-  (use-package lsp-mode
-    :ensure
-    :commands lsp
-    :custom
-    ;; what to use when checking on-save. "check" is default, I prefer clippy
-    (lsp-rust-analyzer-cargo-watch-command "clippy")
-    (lsp-eldoc-render-all t)
-    (lsp-idle-delay 0.6)
-    ;; enable / disable the hints as you prefer:
-    (lsp-rust-analyzer-server-display-inlay-hints t)
-    (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
-    (lsp-rust-analyzer-display-chaining-hints t)
-    (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
-    (lsp-rust-analyzer-display-closure-return-type-hints t)
-    (lsp-rust-analyzer-display-parameter-hints nil)
-    (lsp-rust-analyzer-display-reborrow-hints nil)
-    :config
-    (add-hook 'lsp-mode-hook 'lsp-ui-mode))
-
-  (use-package lsp-ui
-    :ensure
-    :commands lsp-ui-mode
-    :custom
-    (lsp-ui-peek-always-show t)
-    (lsp-ui-sideline-show-hover t)
-    (lsp-ui-doc-enable nil))
-
-  (use-package consult-lsp)
-#+end_src
-
-*** flycheck
-
-#+begin_src emacs-lisp :tangle no
-  (use-package flycheck :ensure)
-#+end_src
 
 ** C/C++
 #+begin_src emacs-lisp
@@ -693,7 +703,7 @@ Run mo-git-blame-current
     (add-hook 'c++-mode-hook 'ejm/cc-mode-hook))
 #+end_src
 
-** C++ debugging
+** Debugging (dap-mode)
 
 #+begin_src emacs-lisp :tangle no
   (use-package dap-mode
@@ -742,6 +752,27 @@ Run mo-git-blame-current
     (add-hook 'c++-mode-hook
               (lambda () (setq flycheck-clang-language-standard "c++17")))
     :delight "")
+#+end_src
+
+** Typescript
+
+#+begin_src emacs-lisp
+  (use-package typescript-mode
+    :ensure t
+    :init
+    (add-hook 'typescript-mode-hook 'lsp-deferred)
+    (add-hook 'javascript-mode-hook 'lsp-deferred)
+    )
+  (use-package dap-node
+    :ensure t
+    :config
+    (defun ejm/setup-dap-node ()
+      "Require dap-node feature and run dap-node-setup if VSCode module isn't already installed"
+      (require 'dap-node)
+      (unless (file-exists-p dap-node-debug-path) (dap-node-setup)))
+    :init
+    (add-hook 'typescript-mode-hook 'ejm/setup-dap-node)
+    (add-hook 'javascript-mode-hook 'ejm/setup-dap-node))
 #+end_src
 
 * Org mode
