@@ -22,13 +22,15 @@
   - [[#turn-stuff-off][Turn stuff off]]
   - [[#theme][Theme]]
   - [[#whitespace][Whitespace]]
+  - [[#dashboard][Dashboard]]
 - [[#wordsmithing][Wordsmithing]]
   - [[#configure-text-encoding][Configure text encoding]]
   - [[#hippie-expand][Hippie expand]]
+  - [[#olivetti][Olivetti]]
   - [[#flyspell][Flyspell]]
   - [[#dictionary][Dictionary]]
   - [[#fill-mode][Fill mode]]
-  - [[#dashboard][Dashboard]]
+  - [[#annotations][Annotations]]
 - [[#completion-frameworks][Completion Frameworks]]
   - [[#vertico][Vertico]]
   - [[#marginalia][Marginalia]]
@@ -53,8 +55,10 @@
 - [[#org-mode][Org mode]]
   - [[#toc-org][Toc-org]]
   - [[#kanban][Kanban]]
+  - [[#babel][Babel]]
 - [[#mastodon][Mastodon]]
 - [[#misc-helpful-settings][Misc helpful settings]]
+  - [[#dictionary-1][Dictionary]]
   - [[#which-key][Which-key]]
   - [[#save-history][Save History]]
   - [[#auto-revert-mode][Auto-revert mode]]
@@ -192,6 +196,23 @@ Delete selection
 (delete-selection-mode t)
 #+end_src
 
+** Dashboard
+
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :preface
+    (defun ejm/dashboard-banner ()
+      "Set a dashboard banner including information on package initialization time and garbage collection."
+      (setq dashboard-banner-logo-title
+            (format "Emace ready in %.2f seconds with %d garbage collections."
+                    (float-time (time-subtract after-init-time before-init-time)) gcs-done)))
+    :config
+    (setq dashboard-startup-banner 'logo)
+    (dashboard-setup-startup-hook)
+    :hook ((elpaca-after-init . dashboard-refresh-buffer)
+           (dashboard-mode    . ejm/dashboard-banner)))
+#+end_src
+
 * Wordsmithing
 
 Text editing options
@@ -222,6 +243,31 @@ Text editing options
   ;; use hippie-expand instead of dabbrev
   (global-set-key (kbd "M-/") #'hippie-expand)
   (global-set-key (kbd "s-/") #'hippie-expand)
+#+end_src
+
+** Olivetti
+
+#+begin_src emacs-lisp
+   ;; Distraction-free screen
+  (use-package olivetti
+    :init
+    (setq olivetti-body-width .67)
+    :config
+    (defun distraction-free ()
+      "Distraction-free writing environment"
+      (interactive)
+      (if (equal olivetti-mode nil)
+          (progn
+            (window-configuration-to-register 1)
+            (delete-other-windows)
+            (text-scale-increase 2)
+            (olivetti-mode t))
+        (progn
+          (jump-to-register 1)
+          (olivetti-mode 0)
+          (text-scale-decrease 2))))
+    :bind
+    (("<f9>" . distraction-free)))
 #+end_src
 
 ** Flyspell
@@ -260,22 +306,16 @@ Automatically wrap text.
     :diminish auto-fill-mode)
 #+end_src
 
-** Dashboard
+** Annotations
 
 #+begin_src emacs-lisp
-  (use-package dashboard
-    :preface
-    (defun ejm/dashboard-banner ()
-      "Set a dashboard banner including information on package initialization time and garbage collection."
-      (setq dashboard-banner-logo-title
-            (format "Emace ready in %.2f seconds with %d garbage collections."
-                    (float-time (time-subtract after-init-time before-init-time)) gcs-done)))
+  (use-package annotate
     :config
-    (setq dashboard-startup-banner 'logo)
-    (dashboard-setup-startup-hook)
-    :hook ((elpaca-after-init . dashboard-refresh-buffer)
-           (dashboard-mode    . ejm/dashboard-banner)))
+    (add-hook 'prog-mode-hook #'annotate-mode))
 #+end_src
+
+#+RESULTS:
+| elpaca< | annotate | annotate | annotate | (queued) | /Users/ericm/.emacs.d/elpaca/repos/annotate/ | /Users/ericm/.emacs.d/elpaca/builds/annotate | nil | nil | (elpaca--clone elpaca--configure-remotes elpaca--checkout-ref elpaca--run-pre-build-commands elpaca--clone-dependencies elpaca--link-build-files elpaca--generate-autoloads-async elpaca--byte-compile elpaca--compile-info elpaca--install-info elpaca--add-info-path elpaca--run-post-build-commands elpaca--activate-package) | (:package annotate :fetcher github :repo bastibe/annotate.el :files (*.el *.el.in dir *.info *.texi *.texinfo doc/dir doc/*.info doc/*.texi doc/*.texinfo lisp/*.el (:exclude .dir-locals.el test.el tests.el *-test.el *-tests.el LICENSE README* *-pkg.el)) :protocol https :inherit t :depth 1) | nil | nil | nil | nil | 2 | (25700 8549 863789 0) | nil | nil | ((queued (25700 8549 863793 0) Package queued 1)) | nil |
 
 * Completion Frameworks
 
@@ -594,13 +634,18 @@ Run mo-git-blame-current
 
 * Programming
 
+Various modes and tools for programming.
+
 ** ElDoc
 
 #+begin_src emacs-lisp
   (use-package eldoc
     :defer t)
 #+end_src
+
 ** lsp-mode
+
+[[https://emacs-lsp.github.io/lsp-mode/][LSP Mode - LSP Support for Emacs]] 
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
@@ -763,16 +808,17 @@ Run mo-git-blame-current
     (add-hook 'typescript-mode-hook 'lsp-deferred)
     (add-hook 'javascript-mode-hook 'lsp-deferred)
     )
-  (use-package dap-node
-    :ensure t
-    :config
-    (defun ejm/setup-dap-node ()
-      "Require dap-node feature and run dap-node-setup if VSCode module isn't already installed"
-      (require 'dap-node)
-      (unless (file-exists-p dap-node-debug-path) (dap-node-setup)))
-    :init
-    (add-hook 'typescript-mode-hook 'ejm/setup-dap-node)
-    (add-hook 'javascript-mode-hook 'ejm/setup-dap-node))
+  ;; (use-package dap-node
+  ;;   :elpaca nil
+  ;;   :ensure t
+  ;;   :config
+  ;;   (defun ejm/setup-dap-node ()
+  ;;     "Require dap-node feature and run dap-node-setup if VSCode module isn't already installed"
+  ;;     (require 'dap-node)
+  ;;     (unless (file-exists-p dap-node-debug-path) (dap-node-setup)))
+  ;;   :init
+  ;;   (add-hook 'typescript-mode-hook 'ejm/setup-dap-node)
+  ;;   (add-hook 'javascript-mode-hook 'ejm/setup-dap-node))
 #+end_src
 
 * Org mode
@@ -793,6 +839,15 @@ Run mo-git-blame-current
     :ensure t)
 #+end_src
 
+** Babel
+
+#+begin_src emacs-lisp
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (C . t)))
+#+end_src
+
 * Mastodon
 
 #+begin_src emacs-lisp
@@ -806,6 +861,14 @@ Run mo-git-blame-current
 
 * Misc helpful settings
 
+** Dictionary
+
+[[https://irreal.org/blog/?p=10824][Webster 1913 and dictionary.el]] and [[http://jsomers.net/blog/dictionary][You're probably using the wrong
+dictionary]]
+
+#+begin_src emacs-lisp
+  (setq dictionary-server "dict.org")
+#+end_src
 ** Which-key
 
 #+begin_src emacs-lisp

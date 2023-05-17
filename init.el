@@ -53,7 +53,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(package-selected-packages
+   '(yaml-mode writeroom-mode which-key vertico use-package undo-tree try treemacs-projectile treemacs-magit treemacs-icons-dired treemacs-evil treemacs-all-the-icons toc-org solarized-theme smartparens skewer-mode rust-mode real-auto-save rainbow-mode rainbow-delimiters plantuml-mode org-sticky-header org-ref org-contrib orderless olivetti oer-reveal nand2tetris monokai-theme mo-git-blame marginalia lsp-ui json-mode js2-refactor inf-clojure ido-vertical-mode ibuffer-projectile git-modes git-gutter-fringe general flycheck flx-ido exec-path-from-shell evil-org embark-consult diminish diff-hl delight dap-mode counsel company color-theme-sanityinc-solarized color-identifiers-mode cider aggressive-indent)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
