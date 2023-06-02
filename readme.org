@@ -53,6 +53,7 @@
   - [[#flycheck][Flycheck]]
   - [[#typescript][Typescript]]
 - [[#org-mode][Org mode]]
+  - [[#deft][Deft]]
   - [[#toc-org][Toc-org]]
   - [[#kanban][Kanban]]
   - [[#babel][Babel]]
@@ -822,6 +823,27 @@ Various modes and tools for programming.
 #+end_src
 
 * Org mode
+
+** Deft
+
+#+begin_src emacs-lisp
+  (use-package deft
+    :ensure t
+    :bind ("<f8>" . deft)
+    :commands (deft)
+    :config
+    (setq deft-directory "~/org/notes"
+          deft-default-extension "org"
+          deft-text-mode 'org-mode
+          deft-org-mode-title-prefix t
+          deft-extensions '("md" "org")
+          deft-use-filter-string-for-filename t
+          deft-file-naming-rules
+          '((noslash . "-")
+            (nospace . "-")
+            (case-fn . downcase)))
+    (global-set-key (kbd "C-x C-g") 'deft-find-file))
+#+end_src
 
 ** Toc-org
 
