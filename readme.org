@@ -53,6 +53,7 @@
   - [[#flycheck][Flycheck]]
   - [[#typescript][Typescript]]
 - [[#org-mode][Org mode]]
+  - [[#denote][DeNote]]
   - [[#deft][Deft]]
   - [[#toc-org][Toc-org]]
   - [[#kanban][Kanban]]
@@ -450,7 +451,7 @@ Automatically wrap text.
     (advice-add #'register-preview :override #'consult-register-window)
 
     ;; Optionally replace `completing-read-multiple' with an enhanced version.
-    (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+    ;(advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
 
     ;; Use Consult to select xref locations with preview
     (setq xref-show-xrefs-function #'consult-xref
@@ -824,9 +825,22 @@ Various modes and tools for programming.
 
 * Org mode
 
-** Deft
+** DeNote
 
 #+begin_src emacs-lisp
+  (use-package denote
+    :ensure t
+    :config
+    (setq denote-directory (expand-file-name "~/org/notes"))
+    (setq denote-known-keywords '("meeting" "project" "team" "learning"))
+    (setq denote-infer-keywords t)
+    (setq denote-sort-keywords t)
+    (add-hook 'dired-mode-hook #'denote-dired-mode))
+#+end_src
+
+** Deft
+
+#+begin_src emacs-lisp :tangle no
   (use-package deft
     :ensure t
     :bind ("<f8>" . deft)
